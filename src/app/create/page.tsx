@@ -188,31 +188,26 @@ export default function CreateBillPage() {
   };
 
   const handleCreateBill = async () => {
-    try {
-      const adminId = generateAdminCode();
-      const bill = await createBill(billName, adminId);
+    const adminId = generateAdminCode();
+    const bill = await createBill(billName, adminId);
 
-      // Add all members
-      for (const member of members) {
-        await addMember(bill.id, member);
-      }
-
-      // Add all payment methods
-      for (const method of paymentMethods) {
-        await addPaymentMethod(bill.id, method);
-      }
-
-      // Add all items
-      for (const item of items) {
-        await addItem(bill.id, item);
-      }
-
-      // Navigate to admin dashboard
-      router.push(`/bill/${bill.id}/admin?code=${adminId}`);
-    } catch (error) {
-      console.error('Error creating bill:', error);
-      alert('เกิดข้อผิดพลาดในการสร้างบิล กรุณาลองใหม่อีกครั้ง\n\nหากปัญหายังคงอยู่ ให้ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ');
+    // Add all members
+    for (const member of members) {
+      await addMember(bill.id, member);
     }
+
+    // Add all payment methods
+    for (const method of paymentMethods) {
+      await addPaymentMethod(bill.id, method);
+    }
+
+    // Add all items
+    for (const item of items) {
+      await addItem(bill.id, item);
+    }
+
+    // Navigate to admin dashboard
+    router.push(`/bill/${bill.id}/admin?code=${adminId}`);
   };
 
   const canProceed = () => {

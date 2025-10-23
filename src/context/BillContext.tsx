@@ -148,18 +148,18 @@ export function BillProvider({ children }: { children: ReactNode }) {
       members: [...currentBillData.members, member],
     };
 
-    // Save to Supabase first
-    try {
-      await billAPI.updateBill(updated);
-    } catch (error) {
-      console.error('Error updating bill in Supabase:', error);
-      throw error; // Re-throw so caller knows it failed
-    }
-
-    // Only update local state after Supabase succeeds
+    // Optimistic update - update local state immediately
     setBills((prev) => ({ ...prev, [billId]: updated }));
     if (currentBill?.id === billId) {
       setCurrentBill(updated);
+    }
+
+    // Sync to Supabase in background (non-blocking)
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error syncing to Supabase (data saved locally):', error);
+      // Don't throw - we already updated local state
     }
   };
 
@@ -174,18 +174,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       ),
     };
 
-    // Save to Supabase first
-    try {
-      await billAPI.updateBill(updated);
-    } catch (error) {
-      console.error('Error updating bill in Supabase:', error);
-      throw error; // Re-throw so caller knows it failed
-    }
-
-    // Only update local state after Supabase succeeds
+    // Optimistic update - update local state immediately
     setBills((prev) => ({ ...prev, [billId]: updated }));
     if (currentBill?.id === billId) {
       setCurrentBill(updated);
+    }
+
+    // Sync to Supabase in background (non-blocking)
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error syncing to Supabase (data saved locally):', error);
     }
   };
 
@@ -203,18 +202,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       })),
     };
 
-    // Save to Supabase first
-    try {
-      await billAPI.updateBill(updated);
-    } catch (error) {
-      console.error('Error updating bill in Supabase:', error);
-      throw error; // Re-throw so caller knows it failed
-    }
-
-    // Only update local state after Supabase succeeds
+    // Optimistic update - update local state immediately
     setBills((prev) => ({ ...prev, [billId]: updated }));
     if (currentBill?.id === billId) {
       setCurrentBill(updated);
+    }
+
+    // Sync to Supabase in background (non-blocking)
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error syncing to Supabase (data saved locally):', error);
     }
   };
 
@@ -227,18 +225,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       items: [...currentBillData.items, item],
     };
 
-    // Save to Supabase first
-    try {
-      await billAPI.updateBill(updated);
-    } catch (error) {
-      console.error('Error updating bill in Supabase:', error);
-      throw error; // Re-throw so caller knows it failed
-    }
-
-    // Only update local state after Supabase succeeds
+    // Optimistic update - update local state immediately
     setBills((prev) => ({ ...prev, [billId]: updated }));
     if (currentBill?.id === billId) {
       setCurrentBill(updated);
+    }
+
+    // Sync to Supabase in background (non-blocking)
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error syncing to Supabase (data saved locally):', error);
     }
   };
 
@@ -253,18 +250,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       ),
     };
 
-    // Save to Supabase first
-    try {
-      await billAPI.updateBill(updated);
-    } catch (error) {
-      console.error('Error updating bill in Supabase:', error);
-      throw error; // Re-throw so caller knows it failed
-    }
-
-    // Only update local state after Supabase succeeds
+    // Optimistic update - update local state immediately
     setBills((prev) => ({ ...prev, [billId]: updated }));
     if (currentBill?.id === billId) {
       setCurrentBill(updated);
+    }
+
+    // Sync to Supabase in background (non-blocking)
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error syncing to Supabase (data saved locally):', error);
     }
   };
 
@@ -277,18 +273,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       items: currentBillData.items.filter((item) => item.id !== itemId),
     };
 
-    // Save to Supabase first
-    try {
-      await billAPI.updateBill(updated);
-    } catch (error) {
-      console.error('Error updating bill in Supabase:', error);
-      throw error; // Re-throw so caller knows it failed
-    }
-
-    // Only update local state after Supabase succeeds
+    // Optimistic update - update local state immediately
     setBills((prev) => ({ ...prev, [billId]: updated }));
     if (currentBill?.id === billId) {
       setCurrentBill(updated);
+    }
+
+    // Sync to Supabase in background (non-blocking)
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error syncing to Supabase (data saved locally):', error);
     }
   };
 
@@ -301,18 +296,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       paymentMethods: [...currentBillData.paymentMethods, method],
     };
 
-    // Save to Supabase first
-    try {
-      await billAPI.updateBill(updated);
-    } catch (error) {
-      console.error('Error updating bill in Supabase:', error);
-      throw error; // Re-throw so caller knows it failed
-    }
-
-    // Only update local state after Supabase succeeds
+    // Optimistic update - update local state immediately
     setBills((prev) => ({ ...prev, [billId]: updated }));
     if (currentBill?.id === billId) {
       setCurrentBill(updated);
+    }
+
+    // Sync to Supabase in background (non-blocking)
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error syncing to Supabase (data saved locally):', error);
     }
   };
 
