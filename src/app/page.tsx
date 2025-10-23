@@ -20,7 +20,7 @@ export default function Home() {
     },
     {
       icon: '💬',
-      title: 'สื่อสารได้',
+      title: 'สื่อสารได้!',
       description: 'Request เมนูที่ไม่ได้กิน และแชทกับ Admin ได้',
     },
     {
