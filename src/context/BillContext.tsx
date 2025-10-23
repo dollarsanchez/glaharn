@@ -10,7 +10,7 @@ interface BillContextType {
   currentBill: Bill | null;
   isLoading: boolean;
   loadBill: (billId: string) => Promise<void>;
-  createBill: (name: string, adminId: string) => Promise<Bill>;
+  createBill: (name: string, adminId: string, location?: string, eventDate?: Date) => Promise<Bill>;
   updateBill: (billId: string, updates: Partial<Bill>) => Promise<void>;
   addMember: (billId: string, member: Member) => Promise<void>;
   updateMember: (billId: string, memberId: string, updates: Partial<Member>) => Promise<void>;
