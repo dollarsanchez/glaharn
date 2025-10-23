@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const billId = params.id as string;
   const adminCode = searchParams.get('code');
 
-  const { bills, loadBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem, addPaymentMethod, removePaymentMethod } = useBill();
+  const { bills, loadBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem, addPaymentMethod, removePaymentMethod, updateRequest, updateComment } = useBill();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authCode, setAuthCode] = useState('');
 
@@ -51,6 +51,10 @@ export default function AdminDashboard() {
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
+
+  // Request & Comment management state
+  const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
+  const [commentReply, setCommentReply] = useState('');
 
   const bill = bills[billId];
 
@@ -259,6 +263,38 @@ export default function AdminDashboard() {
 
   const deselectAllMembers = (setter: (list: string[]) => void) => {
     setter([]);
+  };
+
+  // Handle request approval/rejection
+  const handleApproveRequest = async (requestId: string) => {
+    const request = bill.requests.find((r) => r.id === requestId);
+    if (!request) return;
+
+    // Update the request status to approved
+    await updateRequest(billId, requestId, { status: 'approved' });
+
+    // Remove the member from the item's sharedBy list
+    const item = bill.items.find((i) => i.id === request.itemId);
+    if (item) {
+      const updatedSharedBy = item.sharedBy.filter((id) => id !== request.memberId);
+      await updateItem(billId, request.itemId, { sharedBy: updatedSharedBy });
+    }
+
+    alert('อนุมัติคำขอแล้ว! ระบบจะคำนวณยอดใหม่');
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    await updateRequest(billId, requestId, { status: 'rejected', adminMessage: 'ปฏิเสธโดย Admin' });
+    alert('ปฏิเสธคำขอแล้ว');
+  };
+
+  // Handle comment reply
+  const handleReplyToComment = async (commentId: string) => {
+    if (!commentReply.trim()) return;
+    await updateComment(billId, commentId, commentReply.trim());
+    setReplyingToCommentId(null);
+    setCommentReply('');
+    alert('ตอบกลับความคิดเห็นแล้ว!');
   };
 
   const memberLink = typeof window !== 'undefined' ? `${window.location.origin}/bill/${billId}` : '';
@@ -586,6 +622,140 @@ export default function AdminDashboard() {
                 )}
               </div>
             </Card>
+
+            {/* Requests Management */}
+            {bill.requests.filter((r) => r.status === 'pending').length > 0 && (
+              <Card className="shadow-lg">
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    📝 คำขอจากสมาชิก
+                  </h2>
+                  <p className="text-gray-600">คำขอที่รอการพิจารณา</p>
+                </div>
+                <div className="space-y-3">
+                  {bill.requests
+                    .filter((request) => request.status === 'pending')
+                    .map((request) => (
+                      <div
+                        key={request.id}
+                        className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 shadow-sm"
+                      >
+                        <div className="mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="warning">รอพิจารณา</Badge>
+                            <span className="font-bold text-gray-900">
+                              {request.memberName}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 mb-1">
+                            ขอไม่หารเมนู: <span className="font-semibold">{request.itemName}</span>
+                          </p>
+                          {request.reason && (
+                            <p className="text-sm text-gray-600 italic">
+                              เหตุผล: {request.reason}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApproveRequest(request.id)}
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                          >
+                            ✓ อนุมัติ
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleRejectRequest(request.id)}
+                            className="flex-1 bg-red-100 hover:bg-red-200 text-red-700"
+                          >
+                            ✕ ปฏิเสธ
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Comments Management */}
+            {bill.comments.length > 0 && (
+              <Card className="shadow-lg">
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    💬 ความคิดเห็น
+                  </h2>
+                  <p className="text-gray-600">ข้อความจากสมาชิก</p>
+                </div>
+                <div className="space-y-3">
+                  {bill.comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm"
+                    >
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-gray-900">
+                            {comment.memberName}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(comment.createdAt).toLocaleString('th-TH')}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-2">
+                          {comment.message}
+                        </p>
+                        {comment.adminReply ? (
+                          <div className="mt-2 pt-2 border-t border-indigo-200">
+                            <p className="text-xs font-semibold text-indigo-600 mb-1">
+                              ตอบกลับของคุณ:
+                            </p>
+                            <p className="text-sm text-gray-900">{comment.adminReply}</p>
+                          </div>
+                        ) : replyingToCommentId === comment.id ? (
+                          <div className="mt-3 pt-3 border-t border-indigo-200 space-y-2">
+                            <textarea
+                              placeholder="พิมพ์คำตอบกลับ..."
+                              value={commentReply}
+                              onChange={(e) => setCommentReply(e.target.value)}
+                              rows={2}
+                              className="w-full px-3 py-2 rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900 placeholder-gray-400 text-sm resize-none"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleReplyToComment(comment.id)}
+                                disabled={!commentReply.trim()}
+                              >
+                                ส่งคำตอบ
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => {
+                                  setReplyingToCommentId(null);
+                                  setCommentReply('');
+                                }}
+                              >
+                                ยกเลิก
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setReplyingToCommentId(comment.id)}
+                            className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-semibold hover:underline"
+                          >
+                            ↩ ตอบกลับ
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
           </div>
         </div>
       </div>

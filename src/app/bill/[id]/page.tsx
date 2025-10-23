@@ -6,14 +6,25 @@ import { useBill } from '@/context/BillContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
-import { calculateMemberSummaries, calculateTransactions, formatCurrency } from '@/lib/calculations';
+import Input from '@/components/ui/Input';
+import { calculateMemberSummaries, calculateTransactions, formatCurrency, generateId } from '@/lib/calculations';
+import { ItemRequest, Comment } from '@/types';
 
 export default function BillPage() {
   const router = useRouter();
   const params = useParams();
   const billId = params.id as string;
-  const { bills, loadBill } = useBill();
+  const { bills, loadBill, addRequest, addComment } = useBill();
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
+
+  // Request modal state
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestItemId, setRequestItemId] = useState<string | null>(null);
+  const [requestType, setRequestType] = useState<'add' | 'remove'>('remove');
+  const [requestReason, setRequestReason] = useState('');
+
+  // Comment state
+  const [commentText, setCommentText] = useState('');
 
   const bill = bills[billId];
 
@@ -22,6 +33,52 @@ export default function BillPage() {
       loadBill(billId);
     }
   }, [billId, loadBill]);
+
+  // Handle request submission
+  const handleSubmitRequest = async (itemId: string, type: 'add' | 'remove') => {
+    if (!selectedMember || !bill) return;
+
+    const member = bill.members.find((m) => m.id === selectedMember);
+    const item = bill.items.find((i) => i.id === itemId);
+    if (!member || !item) return;
+
+    const request: ItemRequest = {
+      id: generateId(),
+      itemId: itemId,
+      memberId: selectedMember,
+      memberName: member.name,
+      itemName: item.name,
+      reason: requestReason.trim() || undefined,
+      status: 'pending',
+      createdAt: new Date(),
+    };
+
+    await addRequest(billId, request);
+    setShowRequestModal(false);
+    setRequestItemId(null);
+    setRequestReason('');
+    alert('ส่งคำขอแล้ว! รอ Admin ตรวจสอบ');
+  };
+
+  // Handle comment submission
+  const handleSubmitComment = async () => {
+    if (!selectedMember || !commentText.trim() || !bill) return;
+
+    const member = bill.members.find((m) => m.id === selectedMember);
+    if (!member) return;
+
+    const comment: Comment = {
+      id: generateId(),
+      memberId: selectedMember,
+      memberName: member.name,
+      message: commentText.trim(),
+      createdAt: new Date(),
+    };
+
+    await addComment(billId, comment);
+    setCommentText('');
+    alert('ส่งความคิดเห็นแล้ว!');
+  };
 
   if (!bill) {
     return (
@@ -306,25 +363,48 @@ export default function BillPage() {
           <div className="space-y-3">
             {memberItems.map((item) => {
               const shareAmount = item.price / item.sharedBy.length;
+              const hasPendingRequest = bill.requests.some(
+                (req) => req.itemId === item.id && req.memberId === selectedMember && req.status === 'pending'
+              );
               return (
                 <div
                   key={item.id}
-                  className="p-4 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm hover:shadow-md transition-all"
+                  className="p-4 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
                 >
-                  <div className="flex-1">
-                    <p className="font-bold text-gray-900 text-lg">{item.name}</p>
-                    <p className="text-sm text-gray-600">
-                      หาร {item.sharedBy.length} คน
-                    </p>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-900 text-lg">{item.name}</p>
+                      <p className="text-sm text-gray-600">
+                        หาร {item.sharedBy.length} คน
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">
+                        ราคารวม {formatCurrency(item.price)}
+                      </p>
+                      <p className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        คุณ: {formatCurrency(shareAmount)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">
-                      ราคารวม {formatCurrency(item.price)}
-                    </p>
-                    <p className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      คุณ: {formatCurrency(shareAmount)}
-                    </p>
-                  </div>
+                  {hasPendingRequest ? (
+                    <div className="pt-3 border-t border-gray-200">
+                      <Badge variant="warning">รอ Admin ตรวจสอบคำขอ</Badge>
+                    </div>
+                  ) : (
+                    <div className="pt-3 border-t border-gray-200">
+                      <button
+                        onClick={() => {
+                          setRequestItemId(item.id);
+                          setRequestType('remove');
+                          setShowRequestModal(true);
+                        }}
+                        className="text-sm text-red-600 hover:text-red-700 font-semibold hover:underline"
+                      >
+                        🚫 ขอไม่หารเมนูนี้
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -333,6 +413,63 @@ export default function BillPage() {
                 <p className="text-gray-400 text-lg">ไม่มีรายการที่คุณต้องหาร</p>
               </div>
             )}
+          </div>
+        </Card>
+
+        {/* Comments Section */}
+        <Card className="shadow-lg">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            💬 ความคิดเห็น
+          </h2>
+
+          {/* Show member's comments */}
+          <div className="space-y-4 mb-6">
+            {bill.comments
+              .filter((comment) => comment.memberId === selectedMember)
+              .map((comment) => (
+                <div
+                  key={comment.id}
+                  className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200"
+                >
+                  <div className="mb-2">
+                    <p className="text-sm text-gray-600">
+                      {new Date(comment.createdAt).toLocaleString('th-TH')}
+                    </p>
+                    <p className="text-gray-900 mt-2">{comment.message}</p>
+                  </div>
+                  {comment.adminReply && (
+                    <div className="mt-3 pt-3 border-t border-indigo-200">
+                      <p className="text-sm font-semibold text-indigo-600 mb-1">
+                        ตอบกลับจาก Admin:
+                      </p>
+                      <p className="text-gray-900">{comment.adminReply}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
+
+          {/* Add comment form */}
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                เขียนความคิดเห็น
+              </label>
+              <textarea
+                placeholder="พิมพ์ข้อความถึง Admin..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0 shadow-sm resize-none"
+              />
+            </div>
+            <Button
+              fullWidth
+              onClick={handleSubmitComment}
+              disabled={!commentText.trim()}
+            >
+              ส่งความคิดเห็น
+            </Button>
           </div>
         </Card>
 
@@ -363,6 +500,53 @@ export default function BillPage() {
           </div>
         </Card>
       </div>
+
+      {/* Request Modal */}
+      {showRequestModal && requestItemId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              ส่งคำขอไม่หารเมนู
+            </h3>
+            <p className="text-gray-600 mb-6">
+              คุณกำลังขอไม่หารเมนู "{bill.items.find((i) => i.id === requestItemId)?.name}"
+              <br />
+              คำขอจะถูกส่งไปยัง Admin เพื่อพิจารณา
+            </p>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                เหตุผล (ไม่บังคับ)
+              </label>
+              <textarea
+                placeholder="เช่น ไม่ได้กินเมนูนี้, กินเมนูอื่นแทน..."
+                value={requestReason}
+                onChange={(e) => setRequestReason(e.target.value)}
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0 shadow-sm resize-none"
+              />
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button
+                fullWidth
+                variant="secondary"
+                onClick={() => {
+                  setShowRequestModal(false);
+                  setRequestItemId(null);
+                  setRequestReason('');
+                }}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                fullWidth
+                onClick={() => handleSubmitRequest(requestItemId, requestType)}
+              >
+                ส่งคำขอ
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
