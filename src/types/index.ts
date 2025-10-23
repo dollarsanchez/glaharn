@@ -85,6 +85,8 @@ export interface Transaction {
 export interface Bill {
   id: string;
   name: string; // ชื่อปาร์ตี้/บิล
+  location?: string; // สถานที่
+  eventDate?: Date; // วันที่และเวลาของงาน
   adminId: string; // รหัสสำหรับ admin
   createdAt: Date;
   members: Member[];

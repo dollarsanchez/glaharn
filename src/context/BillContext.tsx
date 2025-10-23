@@ -94,11 +94,13 @@ export function BillProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const createBill = async (name: string, adminId: string): Promise<Bill> => {
+  const createBill = async (name: string, adminId: string, location?: string, eventDate?: Date): Promise<Bill> => {
     const billId = generateId();
     const newBill: Bill = {
       id: billId,
       name,
+      location,
+      eventDate,
       adminId,
       createdAt: new Date(),
       members: [],

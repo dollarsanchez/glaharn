@@ -214,9 +214,29 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <h1 className="text-4xl font-bold mb-2">{bill.name}</h1>
-              <p className="text-indigo-100 text-lg">
-                {bill.members.length} สมาชิก • {bill.items.length} รายการ
-              </p>
+              <div className="space-y-1">
+                {bill.location && (
+                  <p className="text-indigo-100 flex items-center gap-2">
+                    <span>📍</span>
+                    <span>{bill.location}</span>
+                  </p>
+                )}
+                {bill.eventDate && (
+                  <p className="text-indigo-100 flex items-center gap-2">
+                    <span>📅</span>
+                    <span>{new Date(bill.eventDate).toLocaleDateString('th-TH', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</span>
+                  </p>
+                )}
+                <p className="text-indigo-100 text-lg">
+                  {bill.members.length} สมาชิก • {bill.items.length} รายการ
+                </p>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button
