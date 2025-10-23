@@ -15,7 +15,7 @@ import {
   generateId,
   getMemberColor,
 } from '@/lib/calculations';
-import { BillItem, Member } from '@/types';
+import { BillItem, Member, PaymentMethod } from '@/types';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -24,13 +24,14 @@ export default function AdminDashboard() {
   const billId = params.id as string;
   const adminCode = searchParams.get('code');
 
-  const { bills, loadBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem } = useBill();
+  const { bills, loadBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem, addPaymentMethod, removePaymentMethod } = useBill();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authCode, setAuthCode] = useState('');
 
   // Modals state
   const [showAddMember, setShowAddMember] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
+  const [showAddPayment, setShowAddPayment] = useState(false);
   const [showShareLink, setShowShareLink] = useState(false);
 
   // Form state
@@ -41,6 +42,15 @@ export default function AdminDashboard() {
   const [selectedPayers, setSelectedPayers] = useState<string[]>([]);
   const [selectedShared, setSelectedShared] = useState<string[]>([]);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+
+  // Payment form state
+  const [paymentType, setPaymentType] = useState<'promptpay' | 'qrcode' | 'bank'>('promptpay');
+  const [paymentOwnerId, setPaymentOwnerId] = useState('');
+  const [promptPayPhone, setPromptPayPhone] = useState('');
+  const [qrcodeUrl, setQrcodeUrl] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
 
   const bill = bills[billId];
 
@@ -193,6 +203,62 @@ export default function AdminDashboard() {
     setSelectedShared(item.sharedBy);
     setEditingItemId(item.id);
     setShowAddItem(true);
+  };
+
+  const handleAddPaymentMethod = () => {
+    if (!paymentOwnerId) {
+      alert('กรุณาเลือกเจ้าของบัญชี');
+      return;
+    }
+
+    const owner = bill.members.find((m) => m.id === paymentOwnerId);
+    if (!owner) return;
+
+    let newMethod: PaymentMethod | null = null;
+
+    if (paymentType === 'promptpay' && promptPayPhone.trim()) {
+      newMethod = {
+        type: 'promptpay',
+        phoneNumber: promptPayPhone.trim(),
+        ownerId: paymentOwnerId,
+        ownerName: owner.name,
+      };
+    } else if (paymentType === 'qrcode' && qrcodeUrl.trim()) {
+      newMethod = {
+        type: 'qrcode',
+        imageUrl: qrcodeUrl.trim(),
+        ownerId: paymentOwnerId,
+        ownerName: owner.name,
+      };
+    } else if (paymentType === 'bank' && bankName.trim() && accountNumber.trim() && accountName.trim()) {
+      newMethod = {
+        type: 'bank',
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+        accountName: accountName.trim(),
+        ownerId: paymentOwnerId,
+        ownerName: owner.name,
+      };
+    }
+
+    if (newMethod) {
+      addPaymentMethod(billId, newMethod);
+      setPaymentOwnerId('');
+      setPromptPayPhone('');
+      setQrcodeUrl('');
+      setBankName('');
+      setAccountNumber('');
+      setAccountName('');
+      setShowAddPayment(false);
+    }
+  };
+
+  const selectAllMembers = (setter: (list: string[]) => void) => {
+    setter(bill.members.map((m) => m.id));
+  };
+
+  const deselectAllMembers = (setter: (list: string[]) => void) => {
+    setter([]);
   };
 
   const memberLink = typeof window !== 'undefined' ? `${window.location.origin}/bill/${billId}` : '';
@@ -377,6 +443,67 @@ export default function AdminDashboard() {
                   <div className="text-center py-8">
                     <p className="text-gray-400 text-lg">ยังไม่มีรายการ</p>
                     <p className="text-gray-500 text-sm">คลิกปุ่ม "+ เพิ่ม" เพื่อเพิ่มรายการ</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Payment Methods */}
+            <Card className="shadow-lg">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    💳 ช่องทางรับเงิน
+                  </h2>
+                  <p className="text-gray-600">จัดการช่องทางการชำระเงิน</p>
+                </div>
+                <Button size="sm" onClick={() => setShowAddPayment(true)}>
+                  + เพิ่ม
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {bill.paymentMethods.map((method, index) => (
+                  <div
+                    key={index}
+                    className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-all"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="default">{method.ownerName}</Badge>
+                          {method.type === 'promptpay' && <Badge variant="info">พร้อมเพย์</Badge>}
+                          {method.type === 'qrcode' && <Badge variant="success">QR Code</Badge>}
+                          {method.type === 'bank' && <Badge variant="warning">บัญชีธนาคาร</Badge>}
+                        </div>
+                        {method.type === 'promptpay' && (
+                          <p className="text-gray-900 font-mono">{method.phoneNumber}</p>
+                        )}
+                        {method.type === 'qrcode' && (
+                          <p className="text-gray-700 text-sm truncate">{method.imageUrl}</p>
+                        )}
+                        {method.type === 'bank' && (
+                          <p className="text-sm text-gray-900">
+                            {method.bankName} - {method.accountNumber} ({method.accountName})
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (confirm('ยืนยันการลบช่องทางนี้?')) {
+                            removePaymentMethod(billId, index);
+                          }
+                        }}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors ml-3"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {bill.paymentMethods.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-400 text-lg">ยังไม่มีช่องทางรับเงิน</p>
+                    <p className="text-gray-500 text-sm">คลิกปุ่ม "+ เพิ่ม" เพื่อเพิ่มช่องทาง</p>
                   </div>
                 )}
               </div>
@@ -582,9 +709,27 @@ export default function AdminDashboard() {
           </div>
 
           <div>
-            <p className="text-sm font-bold text-gray-900 mb-2">
-              ใครกิน? (หารกัน)
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-bold text-gray-900">
+                ใครกิน? (หารกัน)
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => selectAllMembers(setSelectedShared)}
+                >
+                  เลือกทั้งหมด
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => deselectAllMembers(setSelectedShared)}
+                >
+                  ล้าง
+                </Button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               {bill.members.map((member) => (
                 <button
@@ -604,6 +749,126 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
+        </div>
+      </Modal>
+
+      {/* Add Payment Method Modal */}
+      <Modal
+        isOpen={showAddPayment}
+        onClose={() => {
+          setShowAddPayment(false);
+          setPaymentOwnerId('');
+          setPromptPayPhone('');
+          setQrcodeUrl('');
+          setBankName('');
+          setAccountNumber('');
+          setAccountName('');
+        }}
+        title="เพิ่มช่องทางรับเงิน"
+        size="lg"
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowAddPayment(false);
+                setPaymentOwnerId('');
+                setPromptPayPhone('');
+                setQrcodeUrl('');
+                setBankName('');
+                setAccountNumber('');
+                setAccountName('');
+              }}
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              onClick={handleAddPaymentMethod}
+              disabled={!paymentOwnerId}
+            >
+              เพิ่มช่องทาง
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-900 mb-2">
+              เจ้าของบัญชี
+            </label>
+            <select
+              value={paymentOwnerId}
+              onChange={(e) => setPaymentOwnerId(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-sm hover:border-gray-300 font-medium"
+            >
+              <option value="">-- เลือกสมาชิก --</option>
+              {bill.members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant={paymentType === 'promptpay' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setPaymentType('promptpay')}
+            >
+              พร้อมเพย์
+            </Button>
+            <Button
+              variant={paymentType === 'qrcode' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setPaymentType('qrcode')}
+            >
+              QR Code
+            </Button>
+            <Button
+              variant={paymentType === 'bank' ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setPaymentType('bank')}
+            >
+              บัญชีธนาคาร
+            </Button>
+          </div>
+
+          {paymentType === 'promptpay' && (
+            <Input
+              placeholder="เบอร์โทรศัพท์พร้อมเพย์"
+              value={promptPayPhone}
+              onChange={(e) => setPromptPayPhone(e.target.value)}
+            />
+          )}
+
+          {paymentType === 'qrcode' && (
+            <Input
+              placeholder="URL ของ QR Code"
+              value={qrcodeUrl}
+              onChange={(e) => setQrcodeUrl(e.target.value)}
+            />
+          )}
+
+          {paymentType === 'bank' && (
+            <div className="space-y-2">
+              <Input
+                placeholder="ชื่อธนาคาร"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+              />
+              <Input
+                placeholder="เลขบัญชี"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+              />
+              <Input
+                placeholder="ชื่อบัญชี"
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+              />
+            </div>
+          )}
         </div>
       </Modal>
 
