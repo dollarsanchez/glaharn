@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Glaharn - แชร์บิลปาร์ตี้ง่ายๆ",
+  title: "Glaharn - แชร์บิลปาร์ตี้ง่ายๆ!",
   description: "แอปแบ่งค่าใช้จ่ายในปาร์ตี้ที่ยุติธรรมและใช้งานง่าย ไม่ต้อง login",
 };
 
