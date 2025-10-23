@@ -146,18 +146,24 @@ export default function CreateBillPage() {
     setter([]);
   };
 
-  const handleCreateBill = () => {
+  const handleCreateBill = async () => {
     const adminId = generateAdminCode();
-    const bill = createBill(billName, adminId);
+    const bill = await createBill(billName, adminId);
 
     // Add all members
-    members.forEach((member) => addMember(bill.id, member));
+    for (const member of members) {
+      await addMember(bill.id, member);
+    }
 
     // Add all payment methods
-    paymentMethods.forEach((method) => addPaymentMethod(bill.id, method));
+    for (const method of paymentMethods) {
+      await addPaymentMethod(bill.id, method);
+    }
 
     // Add all items
-    items.forEach((item) => addItem(bill.id, item));
+    for (const item of items) {
+      await addItem(bill.id, item);
+    }
 
     // Navigate to admin dashboard
     router.push(`/bill/${bill.id}/admin?code=${adminId}`);
@@ -472,27 +478,9 @@ export default function CreateBillPage() {
                 />
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      ใครจ่ายเงิน?
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => selectAllMembers(setSelectedPayers)}
-                      >
-                        เลือกทั้งหมด
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => deselectAllMembers(setSelectedPayers)}
-                      >
-                        ล้าง
-                      </Button>
-                    </div>
-                  </div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    ใครจ่ายเงิน?
+                  </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {members.map((member) => (
                       <button

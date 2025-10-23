@@ -3,24 +3,26 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Bill, BillItem, Member, ItemRequest, Comment, PaymentMethod } from '@/types';
 import { generateId } from '@/lib/calculations';
+import { billAPI } from '@/lib/supabase';
 
 interface BillContextType {
   bills: Record<string, Bill>;
   currentBill: Bill | null;
-  loadBill: (billId: string) => void;
-  createBill: (name: string, adminId: string) => Bill;
-  updateBill: (billId: string, updates: Partial<Bill>) => void;
-  addMember: (billId: string, member: Member) => void;
-  removeMember: (billId: string, memberId: string) => void;
-  addItem: (billId: string, item: BillItem) => void;
-  updateItem: (billId: string, itemId: string, updates: Partial<BillItem>) => void;
-  removeItem: (billId: string, itemId: string) => void;
-  addPaymentMethod: (billId: string, method: PaymentMethod) => void;
-  removePaymentMethod: (billId: string, index: number) => void;
-  addRequest: (billId: string, request: ItemRequest) => void;
-  updateRequest: (billId: string, requestId: string, updates: Partial<ItemRequest>) => void;
-  addComment: (billId: string, comment: Comment) => void;
-  updateComment: (billId: string, commentId: string, adminReply: string) => void;
+  isLoading: boolean;
+  loadBill: (billId: string) => Promise<void>;
+  createBill: (name: string, adminId: string) => Promise<Bill>;
+  updateBill: (billId: string, updates: Partial<Bill>) => Promise<void>;
+  addMember: (billId: string, member: Member) => Promise<void>;
+  removeMember: (billId: string, memberId: string) => Promise<void>;
+  addItem: (billId: string, item: BillItem) => Promise<void>;
+  updateItem: (billId: string, itemId: string, updates: Partial<BillItem>) => Promise<void>;
+  removeItem: (billId: string, itemId: string) => Promise<void>;
+  addPaymentMethod: (billId: string, method: PaymentMethod) => Promise<void>;
+  removePaymentMethod: (billId: string, index: number) => Promise<void>;
+  addRequest: (billId: string, request: ItemRequest) => Promise<void>;
+  updateRequest: (billId: string, requestId: string, updates: Partial<ItemRequest>) => Promise<void>;
+  addComment: (billId: string, comment: Comment) => Promise<void>;
+  updateComment: (billId: string, commentId: string, adminReply: string) => Promise<void>;
 }
 
 const BillContext = createContext<BillContextType | undefined>(undefined);
@@ -30,8 +32,9 @@ const STORAGE_KEY = 'glaharn_bills';
 export function BillProvider({ children }: { children: ReactNode }) {
   const [bills, setBills] = useState<Record<string, Bill>>({});
   const [currentBill, setCurrentBill] = useState<Bill | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Load bills from localStorage on mount
+  // Load bills from localStorage on mount (as fallback/cache)
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -54,7 +57,7 @@ export function BillProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Save bills to localStorage whenever they change
+  // Save bills to localStorage whenever they change (as cache)
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(bills));
@@ -63,14 +66,34 @@ export function BillProvider({ children }: { children: ReactNode }) {
     }
   }, [bills]);
 
-  const loadBill = (billId: string) => {
-    const bill = bills[billId];
-    if (bill) {
-      setCurrentBill(bill);
+  const loadBill = async (billId: string) => {
+    setIsLoading(true);
+    try {
+      // Try to get from Supabase first
+      const bill = await billAPI.getBill(billId);
+      if (bill) {
+        setBills((prev) => ({ ...prev, [billId]: bill }));
+        setCurrentBill(bill);
+      } else {
+        // Fallback to localStorage cache
+        const cachedBill = bills[billId];
+        if (cachedBill) {
+          setCurrentBill(cachedBill);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading bill:', error);
+      // Fallback to localStorage
+      const cachedBill = bills[billId];
+      if (cachedBill) {
+        setCurrentBill(cachedBill);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const createBill = (name: string, adminId: string): Bill => {
+  const createBill = async (name: string, adminId: string): Promise<Bill> => {
     const billId = generateId();
     const newBill: Bill = {
       id: billId,
@@ -84,23 +107,38 @@ export function BillProvider({ children }: { children: ReactNode }) {
       comments: [],
     };
 
+    // Save to local state first
     setBills((prev) => ({ ...prev, [billId]: newBill }));
     setCurrentBill(newBill);
+
+    // Save to Supabase
+    try {
+      await billAPI.createBill(newBill);
+    } catch (error) {
+      console.error('Error creating bill in Supabase:', error);
+    }
+
     return newBill;
   };
 
-  const updateBill = (billId: string, updates: Partial<Bill>) => {
+  const updateBill = async (billId: string, updates: Partial<Bill>) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = { ...prev[billId], ...updates };
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const addMember = (billId: string, member: Member) => {
+  const addMember = async (billId: string, member: Member) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -110,11 +148,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const removeMember = (billId: string, memberId: string) => {
+  const removeMember = async (billId: string, memberId: string) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -129,11 +173,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const addItem = (billId: string, item: BillItem) => {
+  const addItem = async (billId: string, item: BillItem) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -143,11 +193,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const updateItem = (billId: string, itemId: string, updates: Partial<BillItem>) => {
+  const updateItem = async (billId: string, itemId: string, updates: Partial<BillItem>) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -159,11 +215,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const removeItem = (billId: string, itemId: string) => {
+  const removeItem = async (billId: string, itemId: string) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -173,11 +235,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const addPaymentMethod = (billId: string, method: PaymentMethod) => {
+  const addPaymentMethod = async (billId: string, method: PaymentMethod) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -187,11 +255,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const removePaymentMethod = (billId: string, index: number) => {
+  const removePaymentMethod = async (billId: string, index: number) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -201,11 +275,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const addRequest = (billId: string, request: ItemRequest) => {
+  const addRequest = async (billId: string, request: ItemRequest) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -215,11 +295,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const updateRequest = (billId: string, requestId: string, updates: Partial<ItemRequest>) => {
+  const updateRequest = async (billId: string, requestId: string, updates: Partial<ItemRequest>) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -231,11 +317,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const addComment = (billId: string, comment: Comment) => {
+  const addComment = async (billId: string, comment: Comment) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -245,11 +337,17 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
 
-  const updateComment = (billId: string, commentId: string, adminReply: string) => {
+  const updateComment = async (billId: string, commentId: string, adminReply: string) => {
     setBills((prev) => {
       if (!prev[billId]) return prev;
       const updated = {
@@ -261,6 +359,12 @@ export function BillProvider({ children }: { children: ReactNode }) {
       if (currentBill?.id === billId) {
         setCurrentBill(updated);
       }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
       return { ...prev, [billId]: updated };
     });
   };
@@ -270,6 +374,7 @@ export function BillProvider({ children }: { children: ReactNode }) {
       value={{
         bills,
         currentBill,
+        isLoading,
         loadBill,
         createBill,
         updateBill,
