@@ -23,10 +23,10 @@ export default function Card({
   return (
     <div
       className={`
-        bg-white dark:bg-gray-800
-        border border-gray-200 dark:border-gray-700
+        bg-white
+        border border-gray-200
         rounded-2xl shadow-sm
-        ${hover ? 'hover:shadow-lg hover:border-violet-300 dark:hover:border-violet-700 transition-all duration-200 cursor-pointer' : ''}
+        ${hover ? 'hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 cursor-pointer' : 'transition-shadow duration-200'}
         ${paddingClasses[padding]}
         ${className}
       `}

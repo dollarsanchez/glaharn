@@ -185,16 +185,18 @@ export default function CreateBillPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">สร้างบิลใหม่</h1>
-          <p className="text-gray-600 dark:text-gray-400">กรอกข้อมูลเพื่อสร้างบิลแชร์ค่าใช้จ่าย</p>
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
+            สร้างบิลใหม่
+          </h1>
+          <p className="text-gray-600 text-lg">กรอกข้อมูลเพื่อสร้างบิลแชร์ค่าใช้จ่าย</p>
         </div>
 
         {/* Progress Steps */}
-        <div className="mb-8">
+        <div className="mb-10">
           <div className="flex justify-between items-center">
             {steps.map((step, index) => {
               const isActive = step.id === currentStep;
@@ -204,21 +206,23 @@ export default function CreateBillPage() {
                 <div key={step.id} className="flex-1 flex items-center">
                   <div className="flex flex-col items-center flex-1">
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold transition-all ${
+                      className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold transition-all duration-300 ${
                         isActive
-                          ? 'bg-blue-600 text-white shadow-lg scale-110'
+                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50 scale-110'
                           : isCompleted
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                          : 'bg-white border-2 border-gray-200 text-gray-400 shadow-sm'
                       }`}
                     >
-                      {step.icon}
+                      {isCompleted ? '✓' : step.icon}
                     </div>
                     <p
-                      className={`text-xs mt-2 hidden sm:block ${
+                      className={`text-xs mt-2 font-semibold hidden sm:block transition-colors ${
                         isActive
-                          ? 'text-blue-600 dark:text-blue-400 font-semibold'
-                          : 'text-gray-500 dark:text-gray-400'
+                          ? 'text-indigo-600'
+                          : isCompleted
+                          ? 'text-emerald-600'
+                          : 'text-gray-400'
                       }`}
                     >
                       {step.name}
@@ -226,8 +230,10 @@ export default function CreateBillPage() {
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`flex-1 h-1 mx-2 ${
-                        isCompleted ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'
+                      className={`flex-1 h-1 mx-2 rounded-full transition-all duration-300 ${
+                        isCompleted
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                          : 'bg-gray-200'
                       }`}
                     />
                   )}
@@ -238,11 +244,14 @@ export default function CreateBillPage() {
         </div>
 
         {/* Form Content */}
-        <Card className="mb-6 border-2">
+        <Card className="mb-8 shadow-lg">
           {/* Step 1: Basic Info */}
           {currentStep === 'basic' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">ข้อมูลพื้นฐาน</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">ข้อมูลพื้นฐาน</h2>
+                <p className="text-gray-600">เริ่มต้นด้วยการตั้งชื่อบิลของคุณ</p>
+              </div>
               <Input
                 label="ชื่อปาร์ตี้/บิล"
                 placeholder="เช่น งานเลี้ยงวันเกิด, ทานข้าวกลุ่ม"
@@ -256,7 +265,10 @@ export default function CreateBillPage() {
           {/* Step 2: Members */}
           {currentStep === 'members' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">เพิ่มสมาชิก</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">เพิ่มสมาชิก</h2>
+                <p className="text-gray-600">ใครบ้างที่จะร่วมแชร์ค่าใช้จ่ายในครั้งนี้?</p>
+              </div>
 
               <div className="flex gap-2">
                 <Input
@@ -271,28 +283,28 @@ export default function CreateBillPage() {
               </div>
 
               {members.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div className="space-y-3">
+                  <p className="text-sm font-bold text-gray-900">
                     สมาชิกทั้งหมด ({members.length})
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {members.map((member) => (
                       <div
                         key={member.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                        className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
                           <div
-                            className="w-8 h-8 rounded-full"
+                            className="w-10 h-10 rounded-full shadow-sm"
                             style={{ backgroundColor: member.color }}
                           />
-                          <span className="font-medium text-gray-900 dark:text-white">
+                          <span className="font-semibold text-gray-900">
                             {member.name}
                           </span>
                         </div>
                         <button
                           onClick={() => handleRemoveMember(member.id)}
-                          className="text-red-600 hover:text-red-800 font-bold"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                         >
                           ✕
                         </button>
@@ -303,9 +315,13 @@ export default function CreateBillPage() {
               )}
 
               {members.length < 2 && (
-                <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg">
-                  ⚠️ ต้องมีสมาชิกอย่างน้อย 2 คนเพื่อดำเนินการต่อ
-                </p>
+                <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+                  <span className="text-2xl">⚠️</span>
+                  <div>
+                    <p className="font-semibold text-amber-900">ต้องมีสมาชิกอย่างน้อย 2 คน</p>
+                    <p className="text-sm text-amber-700">เพิ่มสมาชิกอีก {2 - members.length} คนเพื่อดำเนินการต่อ</p>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -313,18 +329,21 @@ export default function CreateBillPage() {
           {/* Step 3: Payment Methods */}
           {currentStep === 'payment' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">วิธีการรับเงิน</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">วิธีการรับเงิน</h2>
+                <p className="text-gray-600">เพิ่มช่องทางการชำระเงินของคุณ</p>
+              </div>
 
               <div className="space-y-4">
                 {/* Select Owner */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
                     เจ้าของบัญชี
                   </label>
                   <select
                     value={paymentOwnerId}
                     onChange={(e) => setPaymentOwnerId(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-sm hover:border-gray-300 font-medium"
                   >
                     <option value="">-- เลือกสมาชิก --</option>
                     {members.map((member) => (
@@ -414,44 +433,46 @@ export default function CreateBillPage() {
               </div>
 
               {paymentMethods.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    วิธีการรับเงินที่เพิ่มแล้ว
+                <div className="space-y-3">
+                  <p className="text-sm font-bold text-gray-900">
+                    วิธีการรับเงินที่เพิ่มแล้ว ({paymentMethods.length})
                   </p>
-                  {paymentMethods.map((method, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex justify-between items-center"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="default">{method.ownerName}</Badge>
-                          {method.type === 'promptpay' && <Badge variant="info">พร้อมเพย์</Badge>}
-                          {method.type === 'qrcode' && <Badge variant="success">QR Code</Badge>}
-                          {method.type === 'bank' && <Badge variant="warning">บัญชีธนาคาร</Badge>}
-                        </div>
-                        {method.type === 'promptpay' && (
-                          <p className="text-gray-700 dark:text-gray-300">{method.phoneNumber}</p>
-                        )}
-                        {method.type === 'qrcode' && (
-                          <p className="text-gray-700 dark:text-gray-300 text-sm">{method.imageUrl}</p>
-                        )}
-                        {method.type === 'bank' && (
-                          <p className="text-sm text-gray-700 dark:text-gray-300">
-                            {method.bankName} - {method.accountNumber} ({method.accountName})
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() =>
-                          setPaymentMethods(paymentMethods.filter((_, i) => i !== index))
-                        }
-                        className="text-red-600 hover:text-red-800 font-bold"
+                  <div className="space-y-2">
+                    {paymentMethods.map((method, index) => (
+                      <div
+                        key={index}
+                        className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 flex justify-between items-center shadow-sm hover:shadow-md transition-all"
                       >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="default">{method.ownerName}</Badge>
+                            {method.type === 'promptpay' && <Badge variant="info">พร้อมเพย์</Badge>}
+                            {method.type === 'qrcode' && <Badge variant="success">QR Code</Badge>}
+                            {method.type === 'bank' && <Badge variant="warning">บัญชีธนาคาร</Badge>}
+                          </div>
+                          {method.type === 'promptpay' && (
+                            <p className="text-gray-900 font-mono">{method.phoneNumber}</p>
+                          )}
+                          {method.type === 'qrcode' && (
+                            <p className="text-gray-700 text-sm truncate">{method.imageUrl}</p>
+                          )}
+                          {method.type === 'bank' && (
+                            <p className="text-sm text-gray-900">
+                              {method.bankName} - {method.accountNumber} ({method.accountName})
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() =>
+                            setPaymentMethods(paymentMethods.filter((_, i) => i !== index))
+                          }
+                          className="w-8 h-8 rounded-lg flex items-center justify-center ml-3 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -460,7 +481,10 @@ export default function CreateBillPage() {
           {/* Step 4: Items */}
           {currentStep === 'items' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">เพิ่มรายการอาหาร</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">เพิ่มรายการอาหาร</h2>
+                <p className="text-gray-600">บันทึกรายการที่สั่งและผู้ที่เกี่ยวข้อง</p>
+              </div>
 
               <div className="space-y-4">
                 <Input
@@ -478,7 +502,7 @@ export default function CreateBillPage() {
                 />
 
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <p className="text-sm font-bold text-gray-900 mb-3">
                     ใครจ่ายเงิน?
                   </p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -486,15 +510,15 @@ export default function CreateBillPage() {
                       <button
                         key={member.id}
                         onClick={() => toggleMemberSelection(member.id, selectedPayers, setSelectedPayers)}
-                        className={`p-2 rounded-lg border-2 transition-all ${
+                        className={`p-3 rounded-xl border-2 transition-all ${
                           selectedPayers.includes(member.id)
-                            ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30'
-                            : 'border-gray-300 dark:border-gray-600'
+                            ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-md scale-105'
+                            : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-sm'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full" style={{ backgroundColor: member.color }} />
-                          <span className="text-sm font-medium">{member.name}</span>
+                          <div className="w-8 h-8 rounded-full shadow-sm" style={{ backgroundColor: member.color }} />
+                          <span className="text-sm font-bold text-gray-900">{member.name}</span>
                         </div>
                       </button>
                     ))}
@@ -502,8 +526,8 @@ export default function CreateBillPage() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-bold text-gray-900">
                       ใครกิน? (หารกัน)
                     </p>
                     <div className="flex gap-2">
@@ -528,15 +552,15 @@ export default function CreateBillPage() {
                       <button
                         key={member.id}
                         onClick={() => toggleMemberSelection(member.id, selectedShared, setSelectedShared)}
-                        className={`p-2 rounded-lg border-2 transition-all ${
+                        className={`p-3 rounded-xl border-2 transition-all ${
                           selectedShared.includes(member.id)
-                            ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/30'
-                            : 'border-gray-300 dark:border-gray-600'
+                            ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md scale-105'
+                            : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-sm'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full" style={{ backgroundColor: member.color }} />
-                          <span className="text-sm font-medium">{member.name}</span>
+                          <div className="w-8 h-8 rounded-full shadow-sm" style={{ backgroundColor: member.color }} />
+                          <span className="text-sm font-bold text-gray-900">{member.name}</span>
                         </div>
                       </button>
                     ))}
@@ -558,44 +582,48 @@ export default function CreateBillPage() {
               </div>
 
               {items.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <div className="space-y-3">
+                  <p className="text-sm font-bold text-gray-900">
                     รายการทั้งหมด ({items.length})
                   </p>
                   <div className="space-y-2">
                     {items.map((item) => (
                       <div
                         key={item.id}
-                        className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+                        className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="font-semibold text-gray-900 dark:text-white">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-gray-900 text-lg">
                               {item.name}
                             </h4>
-                            <p className="text-lg text-blue-600 dark:text-blue-400 font-bold">
+                            <p className="text-2xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold">
                               ฿{item.price.toFixed(2)}
                             </p>
                           </div>
                           <button
                             onClick={() => handleRemoveItem(item.id)}
-                            className="text-red-600 hover:text-red-800 font-bold"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
                           >
                             ✕
                           </button>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          <p>
-                            💳 จ่ายโดย:{' '}
-                            {item.paidBy
-                              .map((id) => members.find((m) => m.id === id)?.name)
-                              .join(', ')}
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p className="flex items-center gap-2">
+                            <span className="font-semibold">💳 จ่ายโดย:</span>
+                            <span>
+                              {item.paidBy
+                                .map((id) => members.find((m) => m.id === id)?.name)
+                                .join(', ')}
+                            </span>
                           </p>
-                          <p>
-                            🍴 หารกัน:{' '}
-                            {item.sharedBy
-                              .map((id) => members.find((m) => m.id === id)?.name)
-                              .join(', ')}
+                          <p className="flex items-center gap-2">
+                            <span className="font-semibold">🍴 หารกัน:</span>
+                            <span>
+                              {item.sharedBy
+                                .map((id) => members.find((m) => m.id === id)?.name)
+                                .join(', ')}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -609,51 +637,100 @@ export default function CreateBillPage() {
           {/* Step 5: Summary */}
           {currentStep === 'summary' && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">สรุปข้อมูล</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">สรุปข้อมูล</h2>
+                <p className="text-gray-600">ตรวจสอบข้อมูลก่อนสร้างบิล</p>
+              </div>
 
               <div className="space-y-4">
-                <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                    ชื่อบิล: {billName}
-                  </h3>
-                </div>
+                <Card padding="md" className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center text-white text-2xl">
+                      📝
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-600">ชื่อบิล</p>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {billName}
+                      </h3>
+                    </div>
+                  </div>
+                </Card>
 
-                <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                    สมาชิก ({members.length} คน)
-                  </h3>
+                <Card padding="md" className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 flex items-center justify-center text-white text-2xl">
+                        👥
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-600">สมาชิก</p>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {members.length} คน
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {members.map((member) => (
-                      <Badge key={member.id}>{member.name}</Badge>
+                      <div key={member.id} className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg shadow-sm">
+                        <div className="w-6 h-6 rounded-full" style={{ backgroundColor: member.color }} />
+                        <span className="text-sm font-semibold text-gray-900">{member.name}</span>
+                      </div>
                     ))}
                   </div>
-                </div>
+                </Card>
 
-                <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                    วิธีการรับเงิน ({paymentMethods.length})
-                  </h3>
-                  {paymentMethods.map((method, index) => (
-                    <div key={index} className="text-sm text-gray-600 dark:text-gray-400">
-                      {method.ownerName} - {method.type === 'promptpay' && 'พร้อมเพย์'}
-                      {method.type === 'qrcode' && 'QR Code'}
-                      {method.type === 'bank' && 'บัญชีธนาคาร'}
+                <Card padding="md" className="bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 flex items-center justify-center text-white text-2xl">
+                      💰
                     </div>
-                  ))}
-                </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-600">วิธีการรับเงิน</p>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {paymentMethods.length} ช่องทาง
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {paymentMethods.map((method, index) => (
+                      <div key={index} className="text-sm bg-white px-3 py-2 rounded-lg shadow-sm">
+                        <span className="font-semibold text-gray-900">{method.ownerName}</span>
+                        <span className="text-gray-600"> - </span>
+                        {method.type === 'promptpay' && <span className="text-gray-600">พร้อมเพย์</span>}
+                        {method.type === 'qrcode' && <span className="text-gray-600">QR Code</span>}
+                        {method.type === 'bank' && <span className="text-gray-600">บัญชีธนาคาร</span>}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
 
-                <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                    รายการอาหาร ({items.length} รายการ)
-                  </h3>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    รวม ฿{items.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
-                  </p>
-                </div>
+                <Card padding="md" className="bg-gradient-to-r from-pink-50 to-rose-50 border-pink-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 flex items-center justify-center text-white text-2xl">
+                        🍽️
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-600">รายการอาหาร</p>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {items.length} รายการ
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-gray-600">ยอดรวม</p>
+                      <p className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+                        ฿{items.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
 
                 <div className="pt-4">
                   <Button onClick={handleCreateBill} size="lg" fullWidth>
-                    สร้างบิลและไปหน้า Admin 🎉
+                    สร้างบิลและไปหน้า Admin
                   </Button>
                 </div>
               </div>

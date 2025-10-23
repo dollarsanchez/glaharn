@@ -14,11 +14,11 @@ export default function Badge({
   ...props
 }: BadgeProps) {
   const variants = {
-    default: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
-    success: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400',
-    warning: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
-    danger: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-    info: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+    default: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border border-gray-300 shadow-sm',
+    success: 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 border border-emerald-300 shadow-sm',
+    warning: 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-300 shadow-sm',
+    danger: 'bg-gradient-to-r from-red-100 to-rose-100 text-red-800 border border-red-300 shadow-sm',
+    info: 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border border-blue-300 shadow-sm',
   };
 
   const sizes = {
@@ -29,7 +29,7 @@ export default function Badge({
 
   return (
     <span
-      className={`inline-flex items-center font-medium rounded-full ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center font-bold rounded-full ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {children}
