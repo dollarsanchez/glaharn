@@ -44,7 +44,14 @@ export const billAPI = {
   async createBill(bill: Bill): Promise<boolean> {
     const { members, items, paymentMethods, requests, comments } = bill;
 
-    const { error } = await supabase.from('bills').insert({
+    console.log('🔵 Attempting to create bill in Supabase:', {
+      billId: bill.id,
+      billName: bill.name,
+      supabaseUrl: supabaseUrl,
+      hasAnonKey: !!supabaseAnonKey,
+    });
+
+    const { data, error } = await supabase.from('bills').insert({
       id: bill.id,
       name: bill.name,
       admin_id: bill.adminId,
@@ -59,10 +66,17 @@ export const billAPI = {
     });
 
     if (error) {
-      console.error('Error creating bill:', error);
+      console.error('❌ Error creating bill:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
       return false;
     }
 
+    console.log('✅ Bill created successfully in Supabase!', data);
     return true;
   },
 
