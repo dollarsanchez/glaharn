@@ -25,6 +25,7 @@ export default function CreateBillPage() {
 
   // Temporary form state
   const [memberName, setMemberName] = useState('');
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [paymentType, setPaymentType] = useState<'promptpay' | 'qrcode' | 'bank'>('promptpay');
   const [paymentOwnerId, setPaymentOwnerId] = useState('');
   const [promptPayPhone, setPromptPayPhone] = useState('');
@@ -37,6 +38,7 @@ export default function CreateBillPage() {
   const [itemPrice, setItemPrice] = useState('');
   const [selectedPayers, setSelectedPayers] = useState<string[]>([]);
   const [selectedShared, setSelectedShared] = useState<string[]>([]);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   const steps = [
     { id: 'basic', name: 'ข้อมูลพื้นฐาน', icon: '📝' },
@@ -48,14 +50,28 @@ export default function CreateBillPage() {
 
   const handleAddMember = () => {
     if (memberName.trim()) {
-      const newMember: Member = {
-        id: generateId(),
-        name: memberName.trim(),
-        color: getMemberColor(members.length),
-      };
-      setMembers([...members, newMember]);
+      if (editingMemberId) {
+        // Update existing member
+        setMembers(members.map((m) =>
+          m.id === editingMemberId ? { ...m, name: memberName.trim() } : m
+        ));
+        setEditingMemberId(null);
+      } else {
+        // Add new member
+        const newMember: Member = {
+          id: generateId(),
+          name: memberName.trim(),
+          color: getMemberColor(members.length),
+        };
+        setMembers([...members, newMember]);
+      }
       setMemberName('');
     }
+  };
+
+  const handleEditMember = (member: Member) => {
+    setMemberName(member.name);
+    setEditingMemberId(member.id);
   };
 
   const handleRemoveMember = (id: string) => {
@@ -111,19 +127,44 @@ export default function CreateBillPage() {
 
   const handleAddItem = () => {
     if (itemName.trim() && itemPrice && selectedPayers.length > 0 && selectedShared.length > 0) {
-      const newItem: BillItem = {
-        id: generateId(),
-        name: itemName.trim(),
-        price: parseFloat(itemPrice),
-        paidBy: selectedPayers,
-        sharedBy: selectedShared,
-      };
-      setItems([...items, newItem]);
+      if (editingItemId) {
+        // Update existing item
+        setItems(items.map((item) =>
+          item.id === editingItemId
+            ? {
+                ...item,
+                name: itemName.trim(),
+                price: parseFloat(itemPrice),
+                paidBy: selectedPayers,
+                sharedBy: selectedShared,
+              }
+            : item
+        ));
+        setEditingItemId(null);
+      } else {
+        // Add new item
+        const newItem: BillItem = {
+          id: generateId(),
+          name: itemName.trim(),
+          price: parseFloat(itemPrice),
+          paidBy: selectedPayers,
+          sharedBy: selectedShared,
+        };
+        setItems([...items, newItem]);
+      }
       setItemName('');
       setItemPrice('');
       setSelectedPayers([]);
       setSelectedShared([]);
     }
+  };
+
+  const handleEditItem = (item: BillItem) => {
+    setItemName(item.name);
+    setItemPrice(item.price.toString());
+    setSelectedPayers(item.paidBy);
+    setSelectedShared(item.sharedBy);
+    setEditingItemId(item.id);
   };
 
   const handleRemoveItem = (id: string) => {
@@ -147,26 +188,31 @@ export default function CreateBillPage() {
   };
 
   const handleCreateBill = async () => {
-    const adminId = generateAdminCode();
-    const bill = await createBill(billName, adminId);
+    try {
+      const adminId = generateAdminCode();
+      const bill = await createBill(billName, adminId);
 
-    // Add all members
-    for (const member of members) {
-      await addMember(bill.id, member);
+      // Add all members
+      for (const member of members) {
+        await addMember(bill.id, member);
+      }
+
+      // Add all payment methods
+      for (const method of paymentMethods) {
+        await addPaymentMethod(bill.id, method);
+      }
+
+      // Add all items
+      for (const item of items) {
+        await addItem(bill.id, item);
+      }
+
+      // Navigate to admin dashboard
+      router.push(`/bill/${bill.id}/admin?code=${adminId}`);
+    } catch (error) {
+      console.error('Error creating bill:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างบิล กรุณาลองใหม่อีกครั้ง\n\nหากปัญหายังคงอยู่ ให้ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ');
     }
-
-    // Add all payment methods
-    for (const method of paymentMethods) {
-      await addPaymentMethod(bill.id, method);
-    }
-
-    // Add all items
-    for (const item of items) {
-      await addItem(bill.id, item);
-    }
-
-    // Navigate to admin dashboard
-    router.push(`/bill/${bill.id}/admin?code=${adminId}`);
   };
 
   const canProceed = () => {
@@ -278,8 +324,19 @@ export default function CreateBillPage() {
                   onKeyPress={(e) => e.key === 'Enter' && handleAddMember()}
                 />
                 <Button onClick={handleAddMember} disabled={!memberName.trim()}>
-                  เพิ่ม
+                  {editingMemberId ? 'บันทึก' : 'เพิ่ม'}
                 </Button>
+                {editingMemberId && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setEditingMemberId(null);
+                      setMemberName('');
+                    }}
+                  >
+                    ยกเลิก
+                  </Button>
+                )}
               </div>
 
               {members.length > 0 && (
@@ -302,12 +359,20 @@ export default function CreateBillPage() {
                             {member.name}
                           </span>
                         </div>
-                        <button
-                          onClick={() => handleRemoveMember(member.id)}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                        >
-                          ✕
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditMember(member)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleRemoveMember(member.id)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -567,18 +632,34 @@ export default function CreateBillPage() {
                   </div>
                 </div>
 
-                <Button
-                  onClick={handleAddItem}
-                  fullWidth
-                  disabled={
-                    !itemName.trim() ||
-                    !itemPrice ||
-                    selectedPayers.length === 0 ||
-                    selectedShared.length === 0
-                  }
-                >
-                  เพิ่มรายการ
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleAddItem}
+                    fullWidth
+                    disabled={
+                      !itemName.trim() ||
+                      !itemPrice ||
+                      selectedPayers.length === 0 ||
+                      selectedShared.length === 0
+                    }
+                  >
+                    {editingItemId ? 'บันทึกรายการ' : 'เพิ่มรายการ'}
+                  </Button>
+                  {editingItemId && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setEditingItemId(null);
+                        setItemName('');
+                        setItemPrice('');
+                        setSelectedPayers([]);
+                        setSelectedShared([]);
+                      }}
+                    >
+                      ยกเลิก
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {items.length > 0 && (
@@ -601,12 +682,20 @@ export default function CreateBillPage() {
                               ฿{item.price.toFixed(2)}
                             </p>
                           </div>
-                          <button
-                            onClick={() => handleRemoveItem(item.id)}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                          >
-                            ✕
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditItem(item)}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleRemoveItem(item.id)}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                            >
+                              ✕
+                            </button>
+                          </div>
                         </div>
                         <div className="text-sm text-gray-600 space-y-1">
                           <p className="flex items-center gap-2">

@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const billId = params.id as string;
   const adminCode = searchParams.get('code');
 
-  const { bills, loadBill, addMember, removeMember, addItem, updateItem, removeItem } = useBill();
+  const { bills, loadBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem } = useBill();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authCode, setAuthCode] = useState('');
 
@@ -35,10 +35,12 @@ export default function AdminDashboard() {
 
   // Form state
   const [memberName, setMemberName] = useState('');
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [itemName, setItemName] = useState('');
   const [itemPrice, setItemPrice] = useState('');
   const [selectedPayers, setSelectedPayers] = useState<string[]>([]);
   const [selectedShared, setSelectedShared] = useState<string[]>([]);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   const bill = bills[billId];
 
@@ -130,33 +132,67 @@ export default function AdminDashboard() {
 
   const handleAddMember = () => {
     if (memberName.trim()) {
-      const newMember: Member = {
-        id: generateId(),
-        name: memberName.trim(),
-        color: getMemberColor(bill.members.length),
-      };
-      addMember(billId, newMember);
+      if (editingMemberId) {
+        // Update existing member
+        updateMember(billId, editingMemberId, { name: memberName.trim() });
+        setEditingMemberId(null);
+      } else {
+        // Add new member
+        const newMember: Member = {
+          id: generateId(),
+          name: memberName.trim(),
+          color: getMemberColor(bill.members.length),
+        };
+        addMember(billId, newMember);
+      }
       setMemberName('');
       setShowAddMember(false);
     }
   };
 
+  const handleEditMember = (member: Member) => {
+    setMemberName(member.name);
+    setEditingMemberId(member.id);
+    setShowAddMember(true);
+  };
+
   const handleAddItem = () => {
     if (itemName.trim() && itemPrice && selectedPayers.length > 0 && selectedShared.length > 0) {
-      const newItem: BillItem = {
-        id: generateId(),
-        name: itemName.trim(),
-        price: parseFloat(itemPrice),
-        paidBy: selectedPayers,
-        sharedBy: selectedShared,
-      };
-      addItem(billId, newItem);
+      if (editingItemId) {
+        // Update existing item
+        updateItem(billId, editingItemId, {
+          name: itemName.trim(),
+          price: parseFloat(itemPrice),
+          paidBy: selectedPayers,
+          sharedBy: selectedShared,
+        });
+        setEditingItemId(null);
+      } else {
+        // Add new item
+        const newItem: BillItem = {
+          id: generateId(),
+          name: itemName.trim(),
+          price: parseFloat(itemPrice),
+          paidBy: selectedPayers,
+          sharedBy: selectedShared,
+        };
+        addItem(billId, newItem);
+      }
       setItemName('');
       setItemPrice('');
       setSelectedPayers([]);
       setSelectedShared([]);
       setShowAddItem(false);
     }
+  };
+
+  const handleEditItem = (item: BillItem) => {
+    setItemName(item.name);
+    setItemPrice(item.price.toString());
+    setSelectedPayers(item.paidBy);
+    setSelectedShared(item.sharedBy);
+    setEditingItemId(item.id);
+    setShowAddItem(true);
   };
 
   const memberLink = typeof window !== 'undefined' ? `${window.location.origin}/bill/${billId}` : '';
@@ -230,7 +266,7 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={member.id}
-                      className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
+                      className="group relative p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
                     >
                       <div className="flex items-center gap-2 mb-3">
                         <div
@@ -248,6 +284,12 @@ export default function AdminDashboard() {
                           </p>
                         </div>
                       )}
+                      <button
+                        onClick={() => handleEditMember(member)}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        ✏️
+                      </button>
                     </div>
                   );
                 })}
@@ -280,16 +322,24 @@ export default function AdminDashboard() {
                           {formatCurrency(item.price)}
                         </p>
                       </div>
-                      <button
-                        onClick={() => {
-                          if (confirm('ยืนยันการลบรายการนี้?')) {
-                            removeItem(billId, item.id);
-                          }
-                        }}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                      >
-                        🗑️
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditItem(item)}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('ยืนยันการลบรายการนี้?')) {
+                              removeItem(billId, item.id);
+                            }
+                          }}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p className="flex items-center gap-2">
@@ -393,18 +443,29 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Add Member Modal */}
+      {/* Add/Edit Member Modal */}
       <Modal
         isOpen={showAddMember}
-        onClose={() => setShowAddMember(false)}
-        title="เพิ่มสมาชิก"
+        onClose={() => {
+          setShowAddMember(false);
+          setEditingMemberId(null);
+          setMemberName('');
+        }}
+        title={editingMemberId ? 'แก้ไขสมาชิก' : 'เพิ่มสมาชิก'}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setShowAddMember(false)}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowAddMember(false);
+                setEditingMemberId(null);
+                setMemberName('');
+              }}
+            >
               ยกเลิก
             </Button>
             <Button onClick={handleAddMember} disabled={!memberName.trim()}>
-              เพิ่ม
+              {editingMemberId ? 'บันทึก' : 'เพิ่ม'}
             </Button>
           </>
         }
@@ -419,21 +480,32 @@ export default function AdminDashboard() {
         />
       </Modal>
 
-      {/* Add Item Modal */}
+      {/* Add/Edit Item Modal */}
       <Modal
         isOpen={showAddItem}
         onClose={() => {
           setShowAddItem(false);
+          setEditingItemId(null);
           setItemName('');
           setItemPrice('');
           setSelectedPayers([]);
           setSelectedShared([]);
         }}
-        title="เพิ่มรายการอาหาร"
+        title={editingItemId ? 'แก้ไขรายการอาหาร' : 'เพิ่มรายการอาหาร'}
         size="lg"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setShowAddItem(false)}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowAddItem(false);
+                setEditingItemId(null);
+                setItemName('');
+                setItemPrice('');
+                setSelectedPayers([]);
+                setSelectedShared([]);
+              }}
+            >
               ยกเลิก
             </Button>
             <Button
@@ -445,7 +517,7 @@ export default function AdminDashboard() {
                 selectedShared.length === 0
               }
             >
-              เพิ่มรายการ
+              {editingItemId ? 'บันทึกรายการ' : 'เพิ่มรายการ'}
             </Button>
           </>
         }

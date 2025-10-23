@@ -13,6 +13,7 @@ interface BillContextType {
   createBill: (name: string, adminId: string) => Promise<Bill>;
   updateBill: (billId: string, updates: Partial<Bill>) => Promise<void>;
   addMember: (billId: string, member: Member) => Promise<void>;
+  updateMember: (billId: string, memberId: string, updates: Partial<Member>) => Promise<void>;
   removeMember: (billId: string, memberId: string) => Promise<void>;
   addItem: (billId: string, item: BillItem) => Promise<void>;
   updateItem: (billId: string, itemId: string, updates: Partial<BillItem>) => Promise<void>;
@@ -139,130 +140,180 @@ export function BillProvider({ children }: { children: ReactNode }) {
   };
 
   const addMember = async (billId: string, member: Member) => {
-    setBills((prev) => {
-      if (!prev[billId]) return prev;
-      const updated = {
-        ...prev[billId],
-        members: [...prev[billId].members, member],
-      };
-      if (currentBill?.id === billId) {
-        setCurrentBill(updated);
-      }
+    const currentBillData = bills[billId];
+    if (!currentBillData) return;
 
-      // Save to Supabase
-      billAPI.updateBill(updated).catch((error) => {
-        console.error('Error updating bill in Supabase:', error);
-      });
+    const updated = {
+      ...currentBillData,
+      members: [...currentBillData.members, member],
+    };
 
-      return { ...prev, [billId]: updated };
-    });
+    // Save to Supabase first
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error updating bill in Supabase:', error);
+      throw error; // Re-throw so caller knows it failed
+    }
+
+    // Only update local state after Supabase succeeds
+    setBills((prev) => ({ ...prev, [billId]: updated }));
+    if (currentBill?.id === billId) {
+      setCurrentBill(updated);
+    }
+  };
+
+  const updateMember = async (billId: string, memberId: string, updates: Partial<Member>) => {
+    const currentBillData = bills[billId];
+    if (!currentBillData) return;
+
+    const updated = {
+      ...currentBillData,
+      members: currentBillData.members.map((m) =>
+        m.id === memberId ? { ...m, ...updates } : m
+      ),
+    };
+
+    // Save to Supabase first
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error updating bill in Supabase:', error);
+      throw error; // Re-throw so caller knows it failed
+    }
+
+    // Only update local state after Supabase succeeds
+    setBills((prev) => ({ ...prev, [billId]: updated }));
+    if (currentBill?.id === billId) {
+      setCurrentBill(updated);
+    }
   };
 
   const removeMember = async (billId: string, memberId: string) => {
-    setBills((prev) => {
-      if (!prev[billId]) return prev;
-      const updated = {
-        ...prev[billId],
-        members: prev[billId].members.filter((m) => m.id !== memberId),
-        items: prev[billId].items.map((item) => ({
-          ...item,
-          paidBy: item.paidBy.filter((id) => id !== memberId),
-          sharedBy: item.sharedBy.filter((id) => id !== memberId),
-        })),
-      };
-      if (currentBill?.id === billId) {
-        setCurrentBill(updated);
-      }
+    const currentBillData = bills[billId];
+    if (!currentBillData) return;
 
-      // Save to Supabase
-      billAPI.updateBill(updated).catch((error) => {
-        console.error('Error updating bill in Supabase:', error);
-      });
+    const updated = {
+      ...currentBillData,
+      members: currentBillData.members.filter((m) => m.id !== memberId),
+      items: currentBillData.items.map((item) => ({
+        ...item,
+        paidBy: item.paidBy.filter((id) => id !== memberId),
+        sharedBy: item.sharedBy.filter((id) => id !== memberId),
+      })),
+    };
 
-      return { ...prev, [billId]: updated };
-    });
+    // Save to Supabase first
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error updating bill in Supabase:', error);
+      throw error; // Re-throw so caller knows it failed
+    }
+
+    // Only update local state after Supabase succeeds
+    setBills((prev) => ({ ...prev, [billId]: updated }));
+    if (currentBill?.id === billId) {
+      setCurrentBill(updated);
+    }
   };
 
   const addItem = async (billId: string, item: BillItem) => {
-    setBills((prev) => {
-      if (!prev[billId]) return prev;
-      const updated = {
-        ...prev[billId],
-        items: [...prev[billId].items, item],
-      };
-      if (currentBill?.id === billId) {
-        setCurrentBill(updated);
-      }
+    const currentBillData = bills[billId];
+    if (!currentBillData) return;
 
-      // Save to Supabase
-      billAPI.updateBill(updated).catch((error) => {
-        console.error('Error updating bill in Supabase:', error);
-      });
+    const updated = {
+      ...currentBillData,
+      items: [...currentBillData.items, item],
+    };
 
-      return { ...prev, [billId]: updated };
-    });
+    // Save to Supabase first
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error updating bill in Supabase:', error);
+      throw error; // Re-throw so caller knows it failed
+    }
+
+    // Only update local state after Supabase succeeds
+    setBills((prev) => ({ ...prev, [billId]: updated }));
+    if (currentBill?.id === billId) {
+      setCurrentBill(updated);
+    }
   };
 
   const updateItem = async (billId: string, itemId: string, updates: Partial<BillItem>) => {
-    setBills((prev) => {
-      if (!prev[billId]) return prev;
-      const updated = {
-        ...prev[billId],
-        items: prev[billId].items.map((item) =>
-          item.id === itemId ? { ...item, ...updates } : item
-        ),
-      };
-      if (currentBill?.id === billId) {
-        setCurrentBill(updated);
-      }
+    const currentBillData = bills[billId];
+    if (!currentBillData) return;
 
-      // Save to Supabase
-      billAPI.updateBill(updated).catch((error) => {
-        console.error('Error updating bill in Supabase:', error);
-      });
+    const updated = {
+      ...currentBillData,
+      items: currentBillData.items.map((item) =>
+        item.id === itemId ? { ...item, ...updates } : item
+      ),
+    };
 
-      return { ...prev, [billId]: updated };
-    });
+    // Save to Supabase first
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error updating bill in Supabase:', error);
+      throw error; // Re-throw so caller knows it failed
+    }
+
+    // Only update local state after Supabase succeeds
+    setBills((prev) => ({ ...prev, [billId]: updated }));
+    if (currentBill?.id === billId) {
+      setCurrentBill(updated);
+    }
   };
 
   const removeItem = async (billId: string, itemId: string) => {
-    setBills((prev) => {
-      if (!prev[billId]) return prev;
-      const updated = {
-        ...prev[billId],
-        items: prev[billId].items.filter((item) => item.id !== itemId),
-      };
-      if (currentBill?.id === billId) {
-        setCurrentBill(updated);
-      }
+    const currentBillData = bills[billId];
+    if (!currentBillData) return;
 
-      // Save to Supabase
-      billAPI.updateBill(updated).catch((error) => {
-        console.error('Error updating bill in Supabase:', error);
-      });
+    const updated = {
+      ...currentBillData,
+      items: currentBillData.items.filter((item) => item.id !== itemId),
+    };
 
-      return { ...prev, [billId]: updated };
-    });
+    // Save to Supabase first
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error updating bill in Supabase:', error);
+      throw error; // Re-throw so caller knows it failed
+    }
+
+    // Only update local state after Supabase succeeds
+    setBills((prev) => ({ ...prev, [billId]: updated }));
+    if (currentBill?.id === billId) {
+      setCurrentBill(updated);
+    }
   };
 
   const addPaymentMethod = async (billId: string, method: PaymentMethod) => {
-    setBills((prev) => {
-      if (!prev[billId]) return prev;
-      const updated = {
-        ...prev[billId],
-        paymentMethods: [...prev[billId].paymentMethods, method],
-      };
-      if (currentBill?.id === billId) {
-        setCurrentBill(updated);
-      }
+    const currentBillData = bills[billId];
+    if (!currentBillData) return;
 
-      // Save to Supabase
-      billAPI.updateBill(updated).catch((error) => {
-        console.error('Error updating bill in Supabase:', error);
-      });
+    const updated = {
+      ...currentBillData,
+      paymentMethods: [...currentBillData.paymentMethods, method],
+    };
 
-      return { ...prev, [billId]: updated };
-    });
+    // Save to Supabase first
+    try {
+      await billAPI.updateBill(updated);
+    } catch (error) {
+      console.error('Error updating bill in Supabase:', error);
+      throw error; // Re-throw so caller knows it failed
+    }
+
+    // Only update local state after Supabase succeeds
+    setBills((prev) => ({ ...prev, [billId]: updated }));
+    if (currentBill?.id === billId) {
+      setCurrentBill(updated);
+    }
   };
 
   const removePaymentMethod = async (billId: string, index: number) => {
@@ -379,6 +430,7 @@ export function BillProvider({ children }: { children: ReactNode }) {
         createBill,
         updateBill,
         addMember,
+        updateMember,
         removeMember,
         addItem,
         updateItem,
