@@ -832,7 +832,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-    </div>
 
       {/* Add/Edit Member Modal */}
       <Modal
