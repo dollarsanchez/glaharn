@@ -12,6 +12,7 @@ interface BillContextType {
   loadBill: (billId: string) => Promise<void>;
   createBill: (name: string, adminId: string, location?: string, eventDate?: Date) => Promise<Bill>;
   updateBill: (billId: string, updates: Partial<Bill>) => Promise<void>;
+  deleteBill: (billId: string) => Promise<void>;
   addMember: (billId: string, member: Member) => Promise<void>;
   updateMember: (billId: string, memberId: string, updates: Partial<Member>) => Promise<void>;
   removeMember: (billId: string, memberId: string) => Promise<void>;
@@ -155,6 +156,27 @@ export function BillProvider({ children }: { children: ReactNode }) {
 
       return { ...prev, [billId]: updated };
     });
+  };
+
+  const deleteBill = async (billId: string) => {
+    // Remove from local state
+    setBills((prev) => {
+      const newBills = { ...prev };
+      delete newBills[billId];
+      return newBills;
+    });
+
+    // Clear current bill if it's the one being deleted
+    if (currentBill?.id === billId) {
+      setCurrentBill(null);
+    }
+
+    // Delete from Supabase
+    try {
+      await billAPI.deleteBill(billId);
+    } catch (error) {
+      console.error('Error deleting bill from Supabase:', error);
+    }
   };
 
   const addMember = async (billId: string, member: Member) => {
@@ -483,6 +505,7 @@ export function BillProvider({ children }: { children: ReactNode }) {
         loadBill,
         createBill,
         updateBill,
+        deleteBill,
         addMember,
         updateMember,
         removeMember,

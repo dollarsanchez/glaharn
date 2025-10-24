@@ -73,6 +73,23 @@ export default function Home() {
               >
                 ดูบิลที่มีอยู่
               </Button>
+              <Button
+                size="lg"
+                variant="ghost"
+                onClick={() => {
+                  const billId = prompt('กรอก Bill ID:');
+                  if (billId) {
+                    const id = billId.split('/').pop()?.split('?')[0] || billId;
+                    const adminCode = prompt('กรอกรหัส Admin (6 ตัวอักษร):');
+                    if (adminCode) {
+                      router.push(`/bill/${id}/admin?code=${adminCode.toUpperCase()}`);
+                    }
+                  }
+                }}
+                className="px-8 py-4 text-lg border-2 border-indigo-600 hover:bg-indigo-50"
+              >
+                👑 เข้าสู่ระบบ Admin
+              </Button>
             </div>
 
             {/* Trust Indicators */}

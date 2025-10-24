@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const billId = params.id as string;
   const adminCode = searchParams.get('code');
 
-  const { bills, loadBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem, addPaymentMethod, removePaymentMethod, updateRequest, updateComment, updatePaymentMethodRequest } = useBill();
+  const { bills, loadBill, deleteBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem, addPaymentMethod, removePaymentMethod, updateRequest, updateComment, updatePaymentMethodRequest } = useBill();
   const { showToast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authCode, setAuthCode] = useState('');
@@ -73,11 +73,31 @@ export default function AdminDashboard() {
   }, [billId, loadBill]);
 
   useEffect(() => {
-    if (adminCode && bill && adminCode.toUpperCase() === bill.adminId.toUpperCase()) {
+    if (adminCode && bill && !isAuthenticated && adminCode.toUpperCase() === bill.adminId.toUpperCase()) {
       setIsAuthenticated(true);
       showToast('เข้าสู่หน้า Admin สำเร็จ!', 'success');
     }
-  }, [adminCode, bill]);
+  }, [adminCode, bill, isAuthenticated, showToast]);
+
+  // Show notification for pending requests
+  useEffect(() => {
+    if (isAuthenticated && bill) {
+      const pendingPaymentRequests = bill.paymentMethodRequests.filter((r) => r.status === 'pending').length;
+      const pendingItemRequests = bill.requests.filter((r) => r.status === 'pending').length;
+      const unreadComments = bill.comments.filter((c) => !c.adminReply).length;
+
+      const totalPending = pendingPaymentRequests + pendingItemRequests + unreadComments;
+
+      if (totalPending > 0) {
+        const messages = [];
+        if (pendingPaymentRequests > 0) messages.push(`${pendingPaymentRequests} คำขอเพิ่มช่องทางรับเงิน`);
+        if (pendingItemRequests > 0) messages.push(`${pendingItemRequests} คำขอไม่หารรายการ`);
+        if (unreadComments > 0) messages.push(`${unreadComments} ความคิดเห็นใหม่`);
+
+        showToast(`มี ${messages.join(', ')} รอตรวจสอบ`, 'info');
+      }
+    }
+  }, [isAuthenticated, bill?.id]);
 
   if (!bill) {
     return (
@@ -364,6 +384,25 @@ export default function AdminDashboard() {
     showToast('ปฏิเสธคำขอแล้ว', 'info');
   };
 
+  // Handle delete bill
+  const handleDeleteBill = async () => {
+    const confirmed = confirm(
+      `⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบบิล "${bill.name}"?\n\nการลบบิลจะไม่สามารถกู้คืนได้!`
+    );
+
+    if (confirmed) {
+      try {
+        await deleteBill(billId);
+        showToast('ลบบิลสำเร็จ!', 'success');
+        setTimeout(() => {
+          router.push('/');
+        }, 1500);
+      } catch (error) {
+        showToast('เกิดข้อผิดพลาดในการลบบิล', 'error');
+      }
+    }
+  };
+
   const memberLink = typeof window !== 'undefined' ? `${window.location.origin}/bill/${billId}` : '';
   const pendingRequestsCount = bill.requests.filter((r) => r.status === 'pending').length;
   const pendingPaymentRequestsCount = bill.paymentMethodRequests.filter((r) => r.status === 'pending').length;
@@ -567,6 +606,29 @@ export default function AdminDashboard() {
                 </div>
               </Card>
             </div>
+
+            {/* Danger Zone */}
+            <Card className="shadow-lg border-2 border-red-200 bg-red-50">
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold text-red-900">
+                  ⚠️ โซนอันตราย
+                </h2>
+                <p className="text-red-700">การดำเนินการในส่วนนี้ไม่สามารถย้อนกลับได้</p>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-red-300">
+                <h3 className="font-bold text-gray-900 mb-2">ลบบิล</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  ลบบิลนี้และข้อมูลทั้งหมดอย่างถาวร การกระทำนี้ไม่สามารถกู้คืนได้
+                </p>
+                <Button
+                  onClick={handleDeleteBill}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  size="sm"
+                >
+                  🗑️ ลบบิลนี้
+                </Button>
+              </div>
+            </Card>
           </div>
         )}
 
