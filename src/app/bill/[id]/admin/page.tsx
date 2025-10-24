@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const billId = params.id as string;
   const adminCode = searchParams.get('code');
 
-  const { bills, loadBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem, addPaymentMethod, removePaymentMethod, updateRequest, updateComment } = useBill();
+  const { bills, loadBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem, addPaymentMethod, removePaymentMethod, updateRequest, updateComment, updatePaymentMethodRequest } = useBill();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authCode, setAuthCode] = useState('');
 
@@ -300,8 +300,29 @@ export default function AdminDashboard() {
     alert('ตอบกลับความคิดเห็นแล้ว!');
   };
 
+  // Handle payment method request approval
+  const handleApprovePaymentRequest = async (requestId: string) => {
+    const request = bill.paymentMethodRequests.find((r) => r.id === requestId);
+    if (!request) return;
+
+    // อนุมัติคำขอโดยเพิ่ม payment method เข้าไปจริง
+    await updatePaymentMethodRequest(billId, requestId, { status: 'approved' });
+    await addPaymentMethod(billId, request.paymentMethod);
+    alert('อนุมัติคำขอแล้ว! เพิ่มช่องทางรับเงินเรียบร้อย');
+  };
+
+  // Handle payment method request rejection
+  const handleRejectPaymentRequest = async (requestId: string) => {
+    await updatePaymentMethodRequest(billId, requestId, {
+      status: 'rejected',
+      adminMessage: 'ปฏิเสธโดย Admin'
+    });
+    alert('ปฏิเสธคำขอแล้ว');
+  };
+
   const memberLink = typeof window !== 'undefined' ? `${window.location.origin}/bill/${billId}` : '';
   const pendingRequestsCount = bill.requests.filter((r) => r.status === 'pending').length;
+  const pendingPaymentRequestsCount = bill.paymentMethodRequests.filter((r) => r.status === 'pending').length;
   const unreadCommentsCount = bill.comments.filter((c) => !c.adminReply).length;
 
   // Tab configuration
@@ -310,7 +331,7 @@ export default function AdminDashboard() {
     { id: 'members' as const, label: 'สมาชิก', icon: '👥', count: bill.members.length },
     { id: 'items' as const, label: 'รายการอาหาร', icon: '🍽️', count: bill.items.length },
     { id: 'payments' as const, label: 'ช่องทางรับเงิน', icon: '💳', count: bill.paymentMethods.length },
-    { id: 'requests' as const, label: 'คำขอ & คอมเมนต์', icon: '💬', badge: pendingRequestsCount + unreadCommentsCount },
+    { id: 'requests' as const, label: 'คำขอ & คอมเมนต์', icon: '💬', badge: pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount },
   ];
 
   return (
@@ -696,12 +717,113 @@ export default function AdminDashboard() {
         {/* Requests Tab */}
         {activeTab === 'requests' && (
           <div className="space-y-6">
-            {/* Pending Requests */}
+            {/* Payment Method Requests */}
+            {bill.paymentMethodRequests.filter((r) => r.status === 'pending').length > 0 && (
+              <Card className="shadow-lg">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    💳 คำขอเพิ่มช่องทางรับเงิน
+                  </h2>
+                  <p className="text-gray-600">คำขอที่รอการพิจารณา ({bill.paymentMethodRequests.filter((r) => r.status === 'pending').length})</p>
+                </div>
+                <div className="space-y-3">
+                  {bill.paymentMethodRequests
+                    .filter((request) => request.status === 'pending')
+                    .map((request) => (
+                      <div
+                        key={request.id}
+                        className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 shadow-sm"
+                      >
+                        <div className="mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="warning">รอพิจารณา</Badge>
+                            <span className="font-bold text-gray-900">
+                              {request.memberName}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 mb-2">
+                            ขอเพิ่มช่องทางรับเงิน
+                          </p>
+
+                          {/* Payment method details */}
+                          <div className="mt-3 p-3 bg-white rounded-lg">
+                            {request.paymentMethod.type === 'promptpay' && (
+                              <div>
+                                <Badge variant="info" size="sm">พร้อมเพย์</Badge>
+                                <p className="text-lg font-mono font-bold text-gray-900 mt-2">
+                                  {request.paymentMethod.phoneNumber}
+                                </p>
+                              </div>
+                            )}
+                            {request.paymentMethod.type === 'qrcode' && (
+                              <div>
+                                <Badge variant="success" size="sm">QR Code</Badge>
+                                <img
+                                  src={request.paymentMethod.imageUrl}
+                                  alt="QR Code"
+                                  className="w-32 h-32 object-contain mt-2 border border-gray-200 rounded-lg"
+                                />
+                                <a
+                                  href={request.paymentMethod.imageUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block mt-2 text-emerald-600 hover:text-emerald-700 font-semibold text-sm hover:underline"
+                                >
+                                  📷 ดูขนาดเต็ม
+                                </a>
+                              </div>
+                            )}
+                            {request.paymentMethod.type === 'bank' && (
+                              <div>
+                                <Badge variant="warning" size="sm">บัญชีธนาคาร</Badge>
+                                <p className="text-base font-bold text-gray-900 mt-2">
+                                  {request.paymentMethod.bankName}
+                                </p>
+                                <p className="text-base font-mono text-gray-900">
+                                  {request.paymentMethod.accountNumber}
+                                </p>
+                                <p className="text-sm text-gray-700">
+                                  {request.paymentMethod.accountName}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          {request.reason && (
+                            <p className="text-sm text-gray-600 italic mt-2">
+                              เหตุผล: {request.reason}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprovePaymentRequest(request.id)}
+                            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                          >
+                            ✓ อนุมัติ
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => handleRejectPaymentRequest(request.id)}
+                            className="flex-1 bg-red-100 hover:bg-red-200 text-red-700"
+                          >
+                            ✕ ปฏิเสธ
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Item Requests */}
             {bill.requests.filter((r) => r.status === 'pending').length > 0 && (
               <Card className="shadow-lg">
                 <div className="mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">
-                    📝 คำขอจากสมาชิก
+                    📝 คำขอไม่หารรายการ
                   </h2>
                   <p className="text-gray-600">คำขอที่รอการพิจารณา ({bill.requests.filter((r) => r.status === 'pending').length})</p>
                 </div>

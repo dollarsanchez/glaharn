@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { Bill, BillItem, Member, ItemRequest, Comment, PaymentMethod } from '@/types';
+import { Bill, BillItem, Member, ItemRequest, Comment, PaymentMethod, PaymentMethodRequest } from '@/types';
 import { generateId } from '@/lib/calculations';
 import { billAPI } from '@/lib/supabase';
 
@@ -24,6 +24,8 @@ interface BillContextType {
   updateRequest: (billId: string, requestId: string, updates: Partial<ItemRequest>) => Promise<void>;
   addComment: (billId: string, comment: Comment) => Promise<void>;
   updateComment: (billId: string, commentId: string, adminReply: string) => Promise<void>;
+  addPaymentMethodRequest: (billId: string, request: PaymentMethodRequest) => Promise<void>;
+  updatePaymentMethodRequest: (billId: string, requestId: string, updates: Partial<PaymentMethodRequest>) => Promise<void>;
 }
 
 const BillContext = createContext<BillContextType | undefined>(undefined);
@@ -73,13 +75,22 @@ export function BillProvider({ children }: { children: ReactNode }) {
       // Try to get from Supabase first
       const bill = await billAPI.getBill(billId);
       if (bill) {
-        setBills((prev) => ({ ...prev, [billId]: bill }));
-        setCurrentBill(bill);
+        // Ensure paymentMethodRequests exists for backward compatibility
+        const normalizedBill = {
+          ...bill,
+          paymentMethodRequests: bill.paymentMethodRequests || [],
+        };
+        setBills((prev) => ({ ...prev, [billId]: normalizedBill }));
+        setCurrentBill(normalizedBill);
       } else {
         // Fallback to localStorage cache
         const cachedBill = bills[billId];
         if (cachedBill) {
-          setCurrentBill(cachedBill);
+          const normalizedCachedBill = {
+            ...cachedBill,
+            paymentMethodRequests: cachedBill.paymentMethodRequests || [],
+          };
+          setCurrentBill(normalizedCachedBill);
         }
       }
     } catch (error) {
@@ -87,7 +98,11 @@ export function BillProvider({ children }: { children: ReactNode }) {
       // Fallback to localStorage
       const cachedBill = bills[billId];
       if (cachedBill) {
-        setCurrentBill(cachedBill);
+        const normalizedCachedBill = {
+          ...cachedBill,
+          paymentMethodRequests: cachedBill.paymentMethodRequests || [],
+        };
+        setCurrentBill(normalizedCachedBill);
       }
     } finally {
       setIsLoading(false);
@@ -107,6 +122,7 @@ export function BillProvider({ children }: { children: ReactNode }) {
       items: [],
       paymentMethods: [],
       requests: [],
+      paymentMethodRequests: [],
       comments: [],
     };
 
@@ -416,6 +432,48 @@ export function BillProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const addPaymentMethodRequest = async (billId: string, request: PaymentMethodRequest) => {
+    setBills((prev) => {
+      if (!prev[billId]) return prev;
+      const updated = {
+        ...prev[billId],
+        paymentMethodRequests: [...prev[billId].paymentMethodRequests, request],
+      };
+      if (currentBill?.id === billId) {
+        setCurrentBill(updated);
+      }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
+      return { ...prev, [billId]: updated };
+    });
+  };
+
+  const updatePaymentMethodRequest = async (billId: string, requestId: string, updates: Partial<PaymentMethodRequest>) => {
+    setBills((prev) => {
+      if (!prev[billId]) return prev;
+      const updated = {
+        ...prev[billId],
+        paymentMethodRequests: prev[billId].paymentMethodRequests.map((req) =>
+          req.id === requestId ? { ...req, ...updates } : req
+        ),
+      };
+      if (currentBill?.id === billId) {
+        setCurrentBill(updated);
+      }
+
+      // Save to Supabase
+      billAPI.updateBill(updated).catch((error) => {
+        console.error('Error updating bill in Supabase:', error);
+      });
+
+      return { ...prev, [billId]: updated };
+    });
+  };
+
   return (
     <BillContext.Provider
       value={{
@@ -437,6 +495,8 @@ export function BillProvider({ children }: { children: ReactNode }) {
         updateRequest,
         addComment,
         updateComment,
+        addPaymentMethodRequest,
+        updatePaymentMethodRequest,
       }}
     >
       {children}

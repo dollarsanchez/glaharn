@@ -54,6 +54,20 @@ export interface ItemRequest {
   createdAt: Date;
 }
 
+// Payment Method Request type - เมื่อ member ขอแก้ไข/เพิ่ม payment method
+export interface PaymentMethodRequest {
+  id: string;
+  memberId: string;
+  memberName: string;
+  requestType: 'add' | 'edit' | 'delete';
+  paymentMethod: PaymentMethod;
+  oldPaymentMethodIndex?: number; // สำหรับ edit/delete
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  adminMessage?: string;
+  createdAt: Date;
+}
+
 // Comment type
 export interface Comment {
   id: string;
@@ -93,6 +107,7 @@ export interface Bill {
   items: BillItem[];
   paymentMethods: PaymentMethod[];
   requests: ItemRequest[];
+  paymentMethodRequests: PaymentMethodRequest[]; // คำขอแก้ไข payment method
   comments: Comment[];
 }
 

@@ -8,13 +8,14 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Input from '@/components/ui/Input';
 import { calculateMemberSummaries, calculateTransactions, formatCurrency, generateId } from '@/lib/calculations';
-import { ItemRequest, Comment } from '@/types';
+import { ItemRequest, Comment, PaymentMethodRequest } from '@/types';
+import { uploadQRCode, validateImageFile } from '@/lib/storage';
 
 export default function BillPage() {
   const router = useRouter();
   const params = useParams();
   const billId = params.id as string;
-  const { bills, loadBill, addRequest, addComment, addPaymentMethod } = useBill();
+  const { bills, loadBill, addRequest, addComment, addPaymentMethodRequest } = useBill();
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
 
   // Request modal state
@@ -30,10 +31,12 @@ export default function BillPage() {
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
   const [paymentType, setPaymentType] = useState<'promptpay' | 'qrcode' | 'bank'>('promptpay');
   const [promptPayPhone, setPromptPayPhone] = useState('');
-  const [qrcodeUrl, setQrcodeUrl] = useState('');
+  const [qrcodeFile, setQrcodeFile] = useState<File | null>(null);
+  const [qrcodePreview, setQrcodePreview] = useState<string>('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const bill = bills[billId];
 
@@ -89,51 +92,95 @@ export default function BillPage() {
     alert('ส่งความคิดเห็นแล้ว!');
   };
 
-  // Handle adding payment method (by member)
+  // Handle file selection for QR Code
+  const handleQRFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      validateImageFile(file);
+      setQrcodeFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setQrcodePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } catch (error: any) {
+      alert(error.message);
+      e.target.value = '';
+    }
+  };
+
+  // Handle adding payment method (by member) - ส่ง request ให้ admin อนุมัติ
   const handleAddPaymentMethod = async () => {
     if (!selectedMember || !bill) return;
 
     const member = bill.members.find((m) => m.id === selectedMember);
     if (!member) return;
 
+    setIsUploading(true);
     let newMethod: any = null;
 
-    if (paymentType === 'promptpay' && promptPayPhone.trim()) {
-      newMethod = {
-        type: 'promptpay',
-        phoneNumber: promptPayPhone.trim(),
-        ownerId: selectedMember,
-        ownerName: member.name,
-      };
-    } else if (paymentType === 'qrcode' && qrcodeUrl.trim()) {
-      newMethod = {
-        type: 'qrcode',
-        imageUrl: qrcodeUrl.trim(),
-        ownerId: selectedMember,
-        ownerName: member.name,
-      };
-    } else if (paymentType === 'bank' && bankName.trim() && accountNumber.trim() && accountName.trim()) {
-      newMethod = {
-        type: 'bank',
-        bankName: bankName.trim(),
-        accountNumber: accountNumber.trim(),
-        accountName: accountName.trim(),
-        ownerId: selectedMember,
-        ownerName: member.name,
-      };
-    } else {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-      return;
-    }
+    try {
+      if (paymentType === 'promptpay' && promptPayPhone.trim()) {
+        newMethod = {
+          type: 'promptpay',
+          phoneNumber: promptPayPhone.trim(),
+          ownerId: selectedMember,
+          ownerName: member.name,
+        };
+      } else if (paymentType === 'qrcode' && qrcodeFile) {
+        // Upload QR Code image to Supabase Storage
+        const imageUrl = await uploadQRCode(qrcodeFile, billId);
+        newMethod = {
+          type: 'qrcode',
+          imageUrl: imageUrl,
+          ownerId: selectedMember,
+          ownerName: member.name,
+        };
+      } else if (paymentType === 'bank' && bankName.trim() && accountNumber.trim() && accountName.trim()) {
+        newMethod = {
+          type: 'bank',
+          bankName: bankName.trim(),
+          accountNumber: accountNumber.trim(),
+          accountName: accountName.trim(),
+          ownerId: selectedMember,
+          ownerName: member.name,
+        };
+      } else {
+        alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+        setIsUploading(false);
+        return;
+      }
 
-    await addPaymentMethod(billId, newMethod);
-    setShowAddPaymentModal(false);
-    setPromptPayPhone('');
-    setQrcodeUrl('');
-    setBankName('');
-    setAccountNumber('');
-    setAccountName('');
-    alert('เพิ่มช่องทางรับเงินเรียบร้อย!');
+      // สร้าง Payment Method Request แทนการเพิ่มโดยตรง
+      const request: PaymentMethodRequest = {
+        id: generateId(),
+        memberId: selectedMember,
+        memberName: member.name,
+        requestType: 'add',
+        paymentMethod: newMethod,
+        status: 'pending',
+        createdAt: new Date(),
+      };
+
+      await addPaymentMethodRequest(billId, request);
+      setShowAddPaymentModal(false);
+      setPromptPayPhone('');
+      setQrcodeFile(null);
+      setQrcodePreview('');
+      setBankName('');
+      setAccountNumber('');
+      setAccountName('');
+      alert('ส่งคำขอเพิ่มช่องทางรับเงินแล้ว! รอ Admin อนุมัติ');
+    } catch (error: any) {
+      console.error('Error adding payment method:', error);
+      alert(error.message || 'เกิดข้อผิดพลาดในการเพิ่มช่องทางรับเงิน');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (!bill) {
@@ -723,14 +770,30 @@ export default function BillPage() {
               )}
 
               {paymentType === 'qrcode' && (
-                <Input
-                  label="URL ของ QR Code"
-                  placeholder="https://example.com/qr.png"
-                  value={qrcodeUrl}
-                  onChange={(e) => setQrcodeUrl(e.target.value)}
-                  helperText="ใส่ลิงก์รูป QR Code ของคุณ (อัพโหลดบน Google Drive, Imgur ฯลฯ)"
-                  autoFocus
-                />
+                <div className="space-y-3">
+                  <label className="block text-sm font-bold text-gray-900">
+                    อัพโหลดรูป QR Code
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleQRFileChange}
+                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded-xl cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  />
+                  <p className="text-xs text-gray-500">
+                    รองรับ JPG, PNG, WEBP (ขนาดไม่เกิน 5MB)
+                  </p>
+                  {qrcodePreview && (
+                    <div className="mt-4">
+                      <p className="text-sm font-semibold text-gray-700 mb-2">ตัวอย่าง:</p>
+                      <img
+                        src={qrcodePreview}
+                        alt="QR Code Preview"
+                        className="w-48 h-48 object-contain border-2 border-gray-200 rounded-xl"
+                      />
+                    </div>
+                  )}
+                </div>
               )}
 
               {paymentType === 'bank' && (
@@ -765,11 +828,13 @@ export default function BillPage() {
                 onClick={() => {
                   setShowAddPaymentModal(false);
                   setPromptPayPhone('');
-                  setQrcodeUrl('');
+                  setQrcodeFile(null);
+                  setQrcodePreview('');
                   setBankName('');
                   setAccountNumber('');
                   setAccountName('');
                 }}
+                disabled={isUploading}
               >
                 ยกเลิก
               </Button>
@@ -777,8 +842,9 @@ export default function BillPage() {
                 fullWidth
                 onClick={handleAddPaymentMethod}
                 className="bg-emerald-600 hover:bg-emerald-700"
+                disabled={isUploading}
               >
-                เพิ่มช่องทาง
+                {isUploading ? 'กำลังอัพโหลด...' : 'ส่งคำขอ'}
               </Button>
             </div>
           </div>
