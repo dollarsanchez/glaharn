@@ -10,12 +10,14 @@ import Input from '@/components/ui/Input';
 import { calculateMemberSummaries, calculateTransactions, formatCurrency, generateId } from '@/lib/calculations';
 import { ItemRequest, Comment, PaymentMethodRequest } from '@/types';
 import { uploadQRCode, validateImageFile } from '@/lib/storage';
+import { useToast } from '@/components/ui/Toast';
 
 export default function BillPage() {
   const router = useRouter();
   const params = useParams();
   const billId = params.id as string;
   const { bills, loadBill, addRequest, addComment, addPaymentMethodRequest } = useBill();
+  const { showToast } = useToast();
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
 
   // Request modal state
@@ -69,7 +71,7 @@ export default function BillPage() {
     setShowRequestModal(false);
     setRequestItemId(null);
     setRequestReason('');
-    alert('ส่งคำขอแล้ว! รอ Admin ตรวจสอบ');
+    showToast('ส่งคำขอแล้ว! รอ Admin ตรวจสอบ', 'success');
   };
 
   // Handle comment submission
@@ -89,7 +91,7 @@ export default function BillPage() {
 
     await addComment(billId, comment);
     setCommentText('');
-    alert('ส่งความคิดเห็นแล้ว!');
+    showToast('ส่งความคิดเห็นแล้ว!', 'success');
   };
 
   // Handle file selection for QR Code
@@ -108,7 +110,7 @@ export default function BillPage() {
       };
       reader.readAsDataURL(file);
     } catch (error: any) {
-      alert(error.message);
+      showToast(error.message, 'error');
       e.target.value = '';
     }
   };
@@ -150,7 +152,7 @@ export default function BillPage() {
           ownerName: member.name,
         };
       } else {
-        alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+        showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
         setIsUploading(false);
         return;
       }
@@ -174,10 +176,10 @@ export default function BillPage() {
       setBankName('');
       setAccountNumber('');
       setAccountName('');
-      alert('ส่งคำขอเพิ่มช่องทางรับเงินแล้ว! รอ Admin อนุมัติ');
+      showToast('ส่งคำขอเพิ่มช่องทางรับเงินแล้ว! รอ Admin อนุมัติ', 'success');
     } catch (error: any) {
       console.error('Error adding payment method:', error);
-      alert(error.message || 'เกิดข้อผิดพลาดในการเพิ่มช่องทางรับเงิน');
+      showToast(error.message || 'เกิดข้อผิดพลาดในการเพิ่มช่องทางรับเงิน', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -273,9 +275,29 @@ export default function BillPage() {
                 className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-white/30 shadow-lg flex-shrink-0"
                 style={{ backgroundColor: member.color }}
               />
-              <div>
+              <div className="flex-1">
                 <h1 className="text-2xl sm:text-3xl font-bold">สวัสดี, {member.name}!</h1>
-                <p className="text-indigo-100 text-base sm:text-lg">{bill.name}</p>
+                <p className="text-indigo-100 text-base sm:text-lg font-semibold">{bill.name}</p>
+                <div className="flex flex-wrap gap-2 mt-2 text-sm text-indigo-100">
+                  {bill.location && (
+                    <span className="flex items-center gap-1">
+                      <span>📍</span>
+                      <span>{bill.location}</span>
+                    </span>
+                  )}
+                  {bill.eventDate && (
+                    <span className="flex items-center gap-1">
+                      <span>📅</span>
+                      <span>{new Date(bill.eventDate).toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</span>
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <button
@@ -655,7 +677,7 @@ export default function BillPage() {
               onClick={() => {
                 const link = window.location.href;
                 navigator.clipboard.writeText(link);
-                alert('คัดลอกลิงก์แล้ว!');
+                showToast('คัดลอกลิงก์แล้ว!', 'success');
               }}
             >
               📋 คัดลอกลิงก์

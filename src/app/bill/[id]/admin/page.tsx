@@ -16,6 +16,8 @@ import {
   getMemberColor,
 } from '@/lib/calculations';
 import { BillItem, Member, PaymentMethod } from '@/types';
+import { uploadQRCode, validateImageFile } from '@/lib/storage';
+import { useToast } from '@/components/ui/Toast';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function AdminDashboard() {
   const adminCode = searchParams.get('code');
 
   const { bills, loadBill, addMember, updateMember, removeMember, addItem, updateItem, removeItem, addPaymentMethod, removePaymentMethod, updateRequest, updateComment, updatePaymentMethodRequest } = useBill();
+  const { showToast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authCode, setAuthCode] = useState('');
 
@@ -47,7 +50,9 @@ export default function AdminDashboard() {
   const [paymentType, setPaymentType] = useState<'promptpay' | 'qrcode' | 'bank'>('promptpay');
   const [paymentOwnerId, setPaymentOwnerId] = useState('');
   const [promptPayPhone, setPromptPayPhone] = useState('');
-  const [qrcodeUrl, setQrcodeUrl] = useState('');
+  const [qrcodeFile, setQrcodeFile] = useState<File | null>(null);
+  const [qrcodePreview, setQrcodePreview] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
@@ -68,8 +73,9 @@ export default function AdminDashboard() {
   }, [billId, loadBill]);
 
   useEffect(() => {
-    if (adminCode && bill && adminCode === bill.adminId) {
+    if (adminCode && bill && adminCode.toUpperCase() === bill.adminId.toUpperCase()) {
       setIsAuthenticated(true);
+      showToast('เข้าสู่หน้า Admin สำเร็จ!', 'success');
     }
   }, [adminCode, bill]);
 
@@ -115,8 +121,9 @@ export default function AdminDashboard() {
               onClick={() => {
                 if (authCode === bill.adminId) {
                   setIsAuthenticated(true);
+                  showToast('เข้าสู่หน้า Admin สำเร็จ!', 'success');
                 } else {
-                  alert('รหัสไม่ถูกต้อง!');
+                  showToast('รหัสไม่ถูกต้อง!', 'error');
                 }
               }}
               fullWidth
@@ -212,51 +219,88 @@ export default function AdminDashboard() {
     setShowAddItem(true);
   };
 
-  const handleAddPaymentMethod = () => {
+  // Handle QR file change
+  const handleQRFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      validateImageFile(file);
+      setQrcodeFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setQrcodePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } catch (error: any) {
+      showToast(error.message, 'error');
+      e.target.value = '';
+    }
+  };
+
+  const handleAddPaymentMethod = async () => {
     if (!paymentOwnerId) {
-      alert('กรุณาเลือกเจ้าของบัญชี');
+      showToast('กรุณาเลือกเจ้าของบัญชี', 'warning');
       return;
     }
 
     const owner = bill.members.find((m) => m.id === paymentOwnerId);
     if (!owner) return;
 
+    setIsUploading(true);
     let newMethod: PaymentMethod | null = null;
 
-    if (paymentType === 'promptpay' && promptPayPhone.trim()) {
-      newMethod = {
-        type: 'promptpay',
-        phoneNumber: promptPayPhone.trim(),
-        ownerId: paymentOwnerId,
-        ownerName: owner.name,
-      };
-    } else if (paymentType === 'qrcode' && qrcodeUrl.trim()) {
-      newMethod = {
-        type: 'qrcode',
-        imageUrl: qrcodeUrl.trim(),
-        ownerId: paymentOwnerId,
-        ownerName: owner.name,
-      };
-    } else if (paymentType === 'bank' && bankName.trim() && accountNumber.trim() && accountName.trim()) {
-      newMethod = {
-        type: 'bank',
-        bankName: bankName.trim(),
-        accountNumber: accountNumber.trim(),
-        accountName: accountName.trim(),
-        ownerId: paymentOwnerId,
-        ownerName: owner.name,
-      };
-    }
+    try {
+      if (paymentType === 'promptpay' && promptPayPhone.trim()) {
+        newMethod = {
+          type: 'promptpay',
+          phoneNumber: promptPayPhone.trim(),
+          ownerId: paymentOwnerId,
+          ownerName: owner.name,
+        };
+      } else if (paymentType === 'qrcode' && qrcodeFile) {
+        // Upload QR Code to Supabase Storage
+        const imageUrl = await uploadQRCode(qrcodeFile, billId);
+        newMethod = {
+          type: 'qrcode',
+          imageUrl: imageUrl,
+          ownerId: paymentOwnerId,
+          ownerName: owner.name,
+        };
+      } else if (paymentType === 'bank' && bankName.trim() && accountNumber.trim() && accountName.trim()) {
+        newMethod = {
+          type: 'bank',
+          bankName: bankName.trim(),
+          accountNumber: accountNumber.trim(),
+          accountName: accountName.trim(),
+          ownerId: paymentOwnerId,
+          ownerName: owner.name,
+        };
+      } else {
+        showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
+        setIsUploading(false);
+        return;
+      }
 
-    if (newMethod) {
-      addPaymentMethod(billId, newMethod);
-      setPaymentOwnerId('');
-      setPromptPayPhone('');
-      setQrcodeUrl('');
-      setBankName('');
-      setAccountNumber('');
-      setAccountName('');
-      setShowAddPayment(false);
+      if (newMethod) {
+        await addPaymentMethod(billId, newMethod);
+        setPaymentOwnerId('');
+        setPromptPayPhone('');
+        setQrcodeFile(null);
+        setQrcodePreview('');
+        setBankName('');
+        setAccountNumber('');
+        setAccountName('');
+        setShowAddPayment(false);
+        showToast('เพิ่มช่องทางรับเงินเรียบร้อย', 'success');
+      }
+    } catch (error: any) {
+      console.error('Error adding payment method:', error);
+      showToast(error.message || 'เกิดข้อผิดพลาดในการเพิ่มช่องทางรับเงิน', 'error');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -283,12 +327,12 @@ export default function AdminDashboard() {
       await updateItem(billId, request.itemId, { sharedBy: updatedSharedBy });
     }
 
-    alert('อนุมัติคำขอแล้ว! ระบบจะคำนวณยอดใหม่');
+    showToast('อนุมัติคำขอแล้ว! ระบบจะคำนวณยอดใหม่', 'success');
   };
 
   const handleRejectRequest = async (requestId: string) => {
     await updateRequest(billId, requestId, { status: 'rejected', adminMessage: 'ปฏิเสธโดย Admin' });
-    alert('ปฏิเสธคำขอแล้ว');
+    showToast('ปฏิเสธคำขอแล้ว', 'info');
   };
 
   // Handle comment reply
@@ -297,7 +341,7 @@ export default function AdminDashboard() {
     await updateComment(billId, commentId, commentReply.trim());
     setReplyingToCommentId(null);
     setCommentReply('');
-    alert('ตอบกลับความคิดเห็นแล้ว!');
+    showToast('ตอบกลับความคิดเห็นแล้ว!', 'success');
   };
 
   // Handle payment method request approval
@@ -317,7 +361,7 @@ export default function AdminDashboard() {
       status: 'rejected',
       adminMessage: 'ปฏิเสธโดย Admin'
     });
-    alert('ปฏิเสธคำขอแล้ว');
+    showToast('ปฏิเสธคำขอแล้ว', 'info');
   };
 
   const memberLink = typeof window !== 'undefined' ? `${window.location.origin}/bill/${billId}` : '';
@@ -1124,7 +1168,8 @@ export default function AdminDashboard() {
           setShowAddPayment(false);
           setPaymentOwnerId('');
           setPromptPayPhone('');
-          setQrcodeUrl('');
+          setQrcodeFile(null);
+          setQrcodePreview('');
           setBankName('');
           setAccountNumber('');
           setAccountName('');
@@ -1139,19 +1184,21 @@ export default function AdminDashboard() {
                 setShowAddPayment(false);
                 setPaymentOwnerId('');
                 setPromptPayPhone('');
-                setQrcodeUrl('');
+                setQrcodeFile(null);
+                setQrcodePreview('');
                 setBankName('');
                 setAccountNumber('');
                 setAccountName('');
               }}
+              disabled={isUploading}
             >
               ยกเลิก
             </Button>
             <Button
               onClick={handleAddPaymentMethod}
-              disabled={!paymentOwnerId}
+              disabled={!paymentOwnerId || isUploading}
             >
-              เพิ่มช่องทาง
+              {isUploading ? 'กำลังอัพโหลด...' : 'เพิ่มช่องทาง'}
             </Button>
           </>
         }
@@ -1208,11 +1255,30 @@ export default function AdminDashboard() {
           )}
 
           {paymentType === 'qrcode' && (
-            <Input
-              placeholder="URL ของ QR Code"
-              value={qrcodeUrl}
-              onChange={(e) => setQrcodeUrl(e.target.value)}
-            />
+            <div className="space-y-3">
+              <label className="block text-sm font-bold text-gray-900">
+                อัพโหลดรูป QR Code
+              </label>
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleQRFileChange}
+                className="block w-full text-sm text-gray-900 border border-gray-300 rounded-xl cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              />
+              <p className="text-xs text-gray-500">
+                รองรับ JPG, PNG, WEBP (ขนาดไม่เกิน 5MB)
+              </p>
+              {qrcodePreview && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">ตัวอย่าง:</p>
+                  <img
+                    src={qrcodePreview}
+                    alt="QR Code Preview"
+                    className="w-48 h-48 object-contain border-2 border-gray-200 rounded-xl"
+                  />
+                </div>
+              )}
+            </div>
           )}
 
           {paymentType === 'bank' && (
@@ -1246,7 +1312,7 @@ export default function AdminDashboard() {
           <Button
             onClick={() => {
               navigator.clipboard.writeText(memberLink);
-              alert('คัดลอกลิงก์แล้ว!');
+              showToast('คัดลอกลิงก์แล้ว!', 'success');
             }}
             fullWidth
           >
