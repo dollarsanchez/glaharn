@@ -42,7 +42,7 @@ export const billAPI = {
 
   // Create new bill
   async createBill(bill: Bill): Promise<boolean> {
-    const { members, items, paymentMethods, requests, comments } = bill;
+    const { members, items, paymentMethods, requests, comments, paymentMethodRequests } = bill;
 
     console.log('🔵 Attempting to create bill in Supabase:', {
       billId: bill.id,
@@ -62,6 +62,7 @@ export const billAPI = {
         paymentMethods,
         requests,
         comments,
+        paymentMethodRequests: paymentMethodRequests || [],
       },
     });
 
@@ -82,7 +83,7 @@ export const billAPI = {
 
   // Update bill
   async updateBill(bill: Bill): Promise<boolean> {
-    const { members, items, paymentMethods, requests, comments } = bill;
+    const { members, items, paymentMethods, requests, comments, paymentMethodRequests } = bill;
 
     const { error } = await supabase
       .from('bills')
@@ -95,6 +96,7 @@ export const billAPI = {
           paymentMethods,
           requests,
           comments,
+          paymentMethodRequests: paymentMethodRequests || [],
         },
       })
       .eq('id', bill.id);
