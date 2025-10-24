@@ -205,44 +205,87 @@ export default function BillPage() {
   // If no member selected, show member selection
   if (!selectedMember) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4">
-        <div className="max-w-2xl mx-auto">
-          <Card className="text-center mb-8 shadow-lg">
-            <div className="mb-4">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3">
-                {bill.name}
-              </h1>
-              <p className="text-gray-600 text-lg">เลือกชื่อของคุณเพื่อดูรายละเอียด</p>
-            </div>
-          </Card>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-12 px-4">
+        {/* Decorative Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-3xl opacity-10"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full blur-3xl opacity-10"></div>
+        </div>
 
-          <Card className="shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              สมาชิกทั้งหมด
+        <div className="max-w-3xl mx-auto relative">
+          {/* Header Card */}
+          <div className="backdrop-blur-xl bg-white/70 rounded-3xl p-8 mb-8 shadow-2xl border border-white/20 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 mb-4">
+              <span className="text-2xl">💰</span>
+              <span className="text-sm font-semibold text-indigo-700">กล้าหาร</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+              {bill.name}
+            </h1>
+            {bill.location && (
+              <p className="text-gray-600 text-lg flex items-center justify-center gap-2">
+                <span>📍</span>
+                <span>{bill.location}</span>
+              </p>
+            )}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <p className="text-xl text-gray-700 font-semibold mb-2">เลือกชื่อของคุณเพื่อดูรายละเอียด</p>
+              <p className="text-gray-500">คลิกที่ชื่อของคุณด้านล่าง</p>
+            </div>
+          </div>
+
+          {/* Members Grid */}
+          <div className="backdrop-blur-xl bg-white/70 rounded-3xl p-8 shadow-2xl border border-white/20">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <span>👥</span>
+              <span>สมาชิกทั้งหมด ({bill.members.length})</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {bill.members.map((member) => (
+              {bill.members.map((member, index) => (
                 <button
                   key={member.id}
                   onClick={() => setSelectedMember(member.id)}
-                  className="p-6 border-2 border-gray-200 rounded-2xl hover:border-indigo-500 hover:bg-gradient-to-br hover:from-indigo-50 hover:via-purple-50 hover:to-pink-50 transition-all text-left group shadow-sm hover:shadow-xl hover:scale-105"
+                  className="group relative p-6 bg-white rounded-2xl border-2 border-gray-200 hover:border-transparent hover:shadow-2xl transition-all duration-300 text-left overflow-hidden hover:scale-105"
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                  }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-16 h-16 rounded-full group-hover:scale-110 transition-transform shadow-lg border-4 border-white"
-                      style={{ backgroundColor: member.color }}
-                    />
-                    <span className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                      {member.name}
-                    </span>
+                  {/* Gradient Border on Hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" style={{ padding: '2px' }}>
+                    <div className="h-full w-full bg-white rounded-2xl"></div>
+                  </div>
+
+                  <div className="relative flex items-center gap-4">
+                    <div className="relative">
+                      <div
+                        className="w-16 h-16 rounded-full group-hover:scale-110 transition-transform shadow-lg"
+                        style={{ backgroundColor: member.color }}
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-white text-xs flex items-center justify-center">✓</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-xl font-bold text-gray-900 group-hover:bg-gradient-to-r group-hover:from-indigo-600 group-hover:to-purple-600 group-hover:bg-clip-text group-hover:text-transparent transition-all">
+                        {member.name}
+                      </span>
+                      <p className="text-sm text-gray-500 group-hover:text-gray-700">คลิกเพื่อดูยอด</p>
+                    </div>
+                    <svg className="w-6 h-6 text-gray-400 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
                 </button>
               ))}
             </div>
-          </Card>
+          </div>
 
-          <div className="mt-6 text-center">
-            <Button variant="ghost" onClick={() => router.push('/')}>
+          <div className="mt-8 text-center">
+            <Button
+              variant="ghost"
+              onClick={() => router.push('/')}
+              className="backdrop-blur-sm bg-white/50 hover:bg-white/70 shadow-lg"
+            >
               ← กลับหน้าหลัก
             </Button>
           </div>
@@ -265,77 +308,96 @@ export default function BillPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-8 px-4 relative">
+      {/* Decorative Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-3xl opacity-10"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full blur-3xl opacity-10"></div>
+      </div>
+
+      <div className="max-w-4xl mx-auto space-y-6 relative">
         {/* Header */}
-        <Card className="bg-gradient-to-r from-indigo-600 to-purple-600 border-none text-white shadow-xl">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-white/30 shadow-lg flex-shrink-0"
-                style={{ backgroundColor: member.color }}
-              />
-              <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl font-bold">สวัสดี, {member.name}!</h1>
-                <p className="text-indigo-100 text-base sm:text-lg font-semibold">{bill.name}</p>
-                <div className="flex flex-wrap gap-2 mt-2 text-sm text-indigo-100">
-                  {bill.location && (
-                    <span className="flex items-center gap-1">
-                      <span>📍</span>
-                      <span>{bill.location}</span>
-                    </span>
-                  )}
-                  {bill.eventDate && (
-                    <span className="flex items-center gap-1">
-                      <span>📅</span>
-                      <span>{new Date(bill.eventDate).toLocaleDateString('th-TH', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}</span>
-                    </span>
-                  )}
+        <div className="relative overflow-hidden rounded-3xl shadow-2xl">
+          {/* Gradient Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600"></div>
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+
+          <div className="relative p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white/30 shadow-2xl flex-shrink-0 ring-4 ring-white/10"
+                    style={{ backgroundColor: member.color }}
+                  />
+                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-xl">👋</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h1 className="text-3xl sm:text-4xl font-bold text-white mb-1">สวัสดี, {member.name}!</h1>
+                  <p className="text-white/90 text-lg font-semibold">{bill.name}</p>
+                  <div className="flex flex-wrap gap-3 mt-2 text-sm text-white/80">
+                    {bill.location && (
+                      <span className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full">
+                        <span>📍</span>
+                        <span>{bill.location}</span>
+                      </span>
+                    )}
+                    {bill.eventDate && (
+                      <span className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full">
+                        <span>📅</span>
+                        <span>{new Date(bill.eventDate).toLocaleDateString('th-TH', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+              <button
+                onClick={() => setSelectedMember(null)}
+                className="px-6 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-2xl transition-all font-semibold text-white shadow-lg hover:shadow-xl hover:scale-105"
+              >
+                🔄 เปลี่ยนคน
+              </button>
             </div>
-            <button
-              onClick={() => setSelectedMember(null)}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition-colors font-semibold text-sm sm:text-base self-end sm:self-auto"
-            >
-              เปลี่ยนคน
-            </button>
-          </div>
 
-          {memberSummary && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-6 border-t border-white/20">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-sm text-indigo-100 mb-1">ยอดที่ต้องหาร</p>
-                <p className="text-3xl font-bold">{formatCurrency(memberSummary.totalShared)}</p>
+            {memberSummary && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-white/20">
+                <div className="backdrop-blur-xl bg-white/20 rounded-2xl p-5 border border-white/30 hover:bg-white/30 transition-all duration-300 group">
+                  <p className="text-sm text-white/80 mb-2 font-medium">💰 ยอดที่ต้องหาร</p>
+                  <p className="text-3xl sm:text-4xl font-bold text-white group-hover:scale-110 transition-transform">{formatCurrency(memberSummary.totalShared)}</p>
+                </div>
+                <div className="backdrop-blur-xl bg-white/20 rounded-2xl p-5 border border-white/30 hover:bg-white/30 transition-all duration-300 group">
+                  <p className="text-sm text-white/80 mb-2 font-medium">💳 ยอดที่จ่ายไป</p>
+                  <p className="text-3xl sm:text-4xl font-bold text-white group-hover:scale-110 transition-transform">{formatCurrency(memberSummary.totalPaid)}</p>
+                </div>
+                <div className="backdrop-blur-xl bg-white/20 rounded-2xl p-5 border border-white/30 hover:bg-white/30 transition-all duration-300 group">
+                  <p className="text-sm text-white/80 mb-2 font-medium">
+                    {memberSummary.balance >= 0 ? '✅ ยอดสุทธิ' : '⚠️ ยอดสุทธิ'}
+                  </p>
+                  <p className={`text-3xl sm:text-4xl font-bold group-hover:scale-110 transition-transform ${
+                    memberSummary.balance >= 0 ? 'text-emerald-300' : 'text-rose-300'
+                  }`}>
+                    {memberSummary.balance >= 0 ? '+' : ''}{formatCurrency(Math.abs(memberSummary.balance))}
+                  </p>
+                </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-sm text-indigo-100 mb-1">ยอดที่จ่ายไป</p>
-                <p className="text-3xl font-bold">{formatCurrency(memberSummary.totalPaid)}</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-sm text-indigo-100 mb-1">ยอดสุทธิ</p>
-                <p className={`text-3xl font-bold ${memberSummary.balance >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                  {memberSummary.balance >= 0 ? '+' : ''}{formatCurrency(Math.abs(memberSummary.balance))}
-                </p>
-              </div>
-            </div>
-          )}
-        </Card>
+            )}
+          </div>
+        </div>
 
         {/* Transactions */}
         {memberTransactions.length > 0 && (
-          <Card className="shadow-lg">
+          <div className="backdrop-blur-xl bg-white/70 rounded-3xl p-6 sm:p-8 shadow-2xl border border-white/20">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                💸 รายการโอนเงิน
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
+                <span>💸</span>
+                <span>รายการโอนเงิน</span>
               </h2>
-              <p className="text-gray-600">รายการที่คุณต้องจ่ายหรือรับ</p>
+              <p className="text-gray-600 mt-1">รายการที่คุณต้องจ่ายหรือรับ</p>
             </div>
             <div className="space-y-4">
               {memberTransactions.map((transaction, index) => {
@@ -343,42 +405,59 @@ export default function BillPage() {
                 return (
                   <div
                     key={index}
-                    className={`p-5 rounded-2xl border-2 shadow-md ${
+                    className={`relative overflow-hidden rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] ${
                       isReceiver
-                        ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300'
-                        : 'bg-gradient-to-r from-red-50 to-pink-50 border-red-300'
+                        ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
+                        : 'bg-gradient-to-br from-rose-500 to-pink-500'
                     }`}
                   >
-                    {isReceiver ? (
-                      <div>
-                        <p className="text-sm font-semibold text-emerald-700 mb-1">
-                          คุณจะได้รับเงินจาก
-                        </p>
-                        <p className="text-xl font-bold text-gray-900 mb-2">
-                          {transaction.fromName}
-                        </p>
-                        <p className="text-3xl font-bold text-emerald-600">
-                          +{formatCurrency(transaction.amount)}
-                        </p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-sm font-semibold text-red-700 mb-1">
-                          คุณต้องจ่ายเงินให้
-                        </p>
-                        <p className="text-xl font-bold text-gray-900 mb-2">
-                          {transaction.toName}
-                        </p>
-                        <p className="text-3xl font-bold text-red-600">
-                          -{formatCurrency(transaction.amount)}
-                        </p>
-                      </div>
-                    )}
+                    {/* Decorative Pattern */}
+                    <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+
+                    <div className="relative">
+                      {isReceiver ? (
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm mb-3">
+                              <span className="text-xl">📥</span>
+                              <p className="text-sm font-semibold text-white">
+                                คุณจะได้รับเงินจาก
+                              </p>
+                            </div>
+                            <p className="text-2xl font-bold text-white mb-2">
+                              {transaction.fromName}
+                            </p>
+                            <p className="text-4xl font-bold text-white">
+                              +{formatCurrency(transaction.amount)}
+                            </p>
+                          </div>
+                          <div className="text-5xl opacity-20">✅</div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm mb-3">
+                              <span className="text-xl">📤</span>
+                              <p className="text-sm font-semibold text-white">
+                                คุณต้องจ่ายเงินให้
+                              </p>
+                            </div>
+                            <p className="text-2xl font-bold text-white mb-2">
+                              {transaction.toName}
+                            </p>
+                            <p className="text-4xl font-bold text-white">
+                              -{formatCurrency(transaction.amount)}
+                            </p>
+                          </div>
+                          <div className="text-5xl opacity-20">⚠️</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Member's Payment Methods (for receiving money) */}
