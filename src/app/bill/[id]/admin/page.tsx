@@ -56,6 +56,9 @@ export default function AdminDashboard() {
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
   const [commentReply, setCommentReply] = useState('');
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'items' | 'payments' | 'requests'>('overview');
+
   const bill = bills[billId];
 
   useEffect(() => {
@@ -298,91 +301,226 @@ export default function AdminDashboard() {
   };
 
   const memberLink = typeof window !== 'undefined' ? `${window.location.origin}/bill/${billId}` : '';
+  const pendingRequestsCount = bill.requests.filter((r) => r.status === 'pending').length;
+  const unreadCommentsCount = bill.comments.filter((c) => !c.adminReply).length;
+
+  // Tab configuration
+  const tabs = [
+    { id: 'overview' as const, label: 'ภาพรวม', icon: '📊' },
+    { id: 'members' as const, label: 'สมาชิก', icon: '👥', count: bill.members.length },
+    { id: 'items' as const, label: 'รายการอาหาร', icon: '🍽️', count: bill.items.length },
+    { id: 'payments' as const, label: 'ช่องทางรับเงิน', icon: '💳', count: bill.paymentMethods.length },
+    { id: 'requests' as const, label: 'คำขอ & คอมเมนต์', icon: '💬', badge: pendingRequestsCount + unreadCommentsCount },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <Card className="bg-gradient-to-r from-indigo-600 to-purple-600 border-none text-white shadow-xl">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full flex items-center gap-2">
-                  <span className="text-xl">👑</span>
-                  <span className="font-semibold">Admin</span>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pb-8">
+      {/* Header - Sticky */}
+      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Top Header */}
+          <div className="py-4 sm:py-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="px-3 py-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center gap-2 text-white text-sm font-semibold">
+                    <span>👑</span>
+                    <span>Admin</span>
+                  </div>
+                  <div className="px-3 py-1 bg-gray-100 rounded-full font-mono font-bold text-sm text-gray-700">
+                    {bill.adminId}
+                  </div>
                 </div>
-                <div className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full font-mono font-bold">
-                  {bill.adminId}
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  {bill.name}
+                </h1>
+                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
+                  {bill.location && (
+                    <span className="flex items-center gap-1">
+                      <span>📍</span>
+                      <span>{bill.location}</span>
+                    </span>
+                  )}
+                  {bill.eventDate && (
+                    <span className="flex items-center gap-1">
+                      <span>📅</span>
+                      <span>{new Date(bill.eventDate).toLocaleDateString('th-TH')}</span>
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <span>💰</span>
+                    <span className="font-bold text-indigo-600">{formatCurrency(totalAmount)}</span>
+                  </span>
                 </div>
               </div>
-              <h1 className="text-4xl font-bold mb-2">{bill.name}</h1>
-              <div className="space-y-1">
-                {bill.location && (
-                  <p className="text-indigo-100 flex items-center gap-2">
-                    <span>📍</span>
-                    <span>{bill.location}</span>
-                  </p>
-                )}
-                {bill.eventDate && (
-                  <p className="text-indigo-100 flex items-center gap-2">
-                    <span>📅</span>
-                    <span>{new Date(bill.eventDate).toLocaleDateString('th-TH', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}</span>
-                  </p>
-                )}
-                <p className="text-indigo-100 text-lg">
-                  {bill.members.length} สมาชิก • {bill.items.length} รายการ
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
               <Button
                 onClick={() => setShowShareLink(true)}
-                className="bg-white text-indigo-600 hover:bg-indigo-50 shadow-lg"
+                size="sm"
+                className="whitespace-nowrap"
               >
                 📤 แชร์ลิงก์
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/20">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-sm text-indigo-100 mb-1">ยอดรวมทั้งหมด</p>
-              <p className="text-4xl font-bold">{formatCurrency(totalAmount)}</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-sm text-indigo-100 mb-1">รายการทั้งหมด</p>
-              <p className="text-4xl font-bold">{bill.items.length}</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-              <p className="text-sm text-indigo-100 mb-1">สมาชิก</p>
-              <p className="text-4xl font-bold">{bill.members.length}</p>
+          {/* Tab Navigation */}
+          <div className="flex overflow-x-auto scrollbar-hide -mb-px">
+            <div className="flex gap-1 sm:gap-2 min-w-full sm:min-w-0">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    relative flex items-center gap-2 px-3 sm:px-4 py-3 text-sm font-semibold whitespace-nowrap
+                    border-b-2 transition-all
+                    ${activeTab === tab.id
+                      ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
+                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    }
+                  `}
+                >
+                  <span className="text-base sm:text-lg">{tab.icon}</span>
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  {tab.count !== undefined && (
+                    <span className={`
+                      px-2 py-0.5 rounded-full text-xs font-bold
+                      ${activeTab === tab.id ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}
+                    `}>
+                      {tab.count}
+                    </span>
+                  )}
+                  {tab.badge !== undefined && tab.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
-        </Card>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Members & Items */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Members */}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg">
+                <p className="text-sm text-indigo-100 mb-1">ยอดรวมทั้งหมด</p>
+                <p className="text-3xl font-bold">{formatCurrency(totalAmount)}</p>
+              </Card>
+              <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-lg">
+                <p className="text-sm text-emerald-100 mb-1">สมาชิก</p>
+                <p className="text-3xl font-bold">{bill.members.length}</p>
+              </Card>
+              <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white border-none shadow-lg">
+                <p className="text-sm text-amber-100 mb-1">รายการอาหาร</p>
+                <p className="text-3xl font-bold">{bill.items.length}</p>
+              </Card>
+              <Card className="bg-gradient-to-br from-rose-500 to-pink-600 text-white border-none shadow-lg">
+                <p className="text-sm text-rose-100 mb-1">ช่องทางรับเงิน</p>
+                <p className="text-3xl font-bold">{bill.paymentMethods.length}</p>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Summary */}
+              <Card className="shadow-lg">
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    📊 สรุปยอด
+                  </h2>
+                  <p className="text-gray-600">ยอดสุทธิของแต่ละคน</p>
+                </div>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {summaries.map((summary) => (
+                    <div
+                      key={summary.memberId}
+                      className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-8 h-8 rounded-full shadow-sm"
+                            style={{
+                              backgroundColor: bill.members.find((m) => m.id === summary.memberId)?.color,
+                            }}
+                          />
+                          <span className="font-bold text-gray-900">
+                            {summary.memberName}
+                          </span>
+                        </div>
+                        <span
+                          className={`font-bold text-lg ${
+                            summary.balance >= 0
+                              ? 'text-emerald-600'
+                              : 'text-red-600'
+                          }`}
+                        >
+                          {summary.balance >= 0 ? '+' : ''}{formatCurrency(Math.abs(summary.balance))}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-600 space-y-1 pl-10">
+                        <p>หาร: {formatCurrency(summary.totalShared)}</p>
+                        <p>จ่าย: {formatCurrency(summary.totalPaid)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Transactions */}
+              <Card className="shadow-lg">
+                <div className="mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    💸 รายการโอนเงิน
+                  </h2>
+                  <p className="text-gray-600">ใครควรจ่ายให้ใคร</p>
+                </div>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {transactions.map((transaction, index) => (
+                    <div
+                      key={index}
+                      className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm"
+                    >
+                      <p className="text-sm text-gray-600 mb-1">
+                        {transaction.fromName} → {transaction.toName}
+                      </p>
+                      <p className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                    </div>
+                  ))}
+                  {transactions.length === 0 && (
+                    <div className="text-center py-4">
+                      <p className="text-gray-400">ไม่มีรายการโอนเงิน</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Members Tab */}
+        {activeTab === 'members' && (
+          <div className="space-y-6">
             <Card className="shadow-lg">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    👥 สมาชิก
+                    👥 สมาชิก ({bill.members.length})
                   </h2>
                   <p className="text-gray-600">จัดการสมาชิกในบิล</p>
                 </div>
                 <Button size="sm" onClick={() => setShowAddMember(true)}>
-                  + เพิ่ม
+                  + เพิ่มสมาชิก
                 </Button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {bill.members.map((member) => {
                   const memberSummary = summaries.find((s) => s.memberId === member.id);
                   return (
@@ -417,18 +555,22 @@ export default function AdminDashboard() {
                 })}
               </div>
             </Card>
+          </div>
+        )}
 
-            {/* Items */}
+        {/* Items Tab */}
+        {activeTab === 'items' && (
+          <div className="space-y-6">
             <Card className="shadow-lg">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    🍽️ รายการอาหาร
+                    🍽️ รายการอาหาร ({bill.items.length})
                   </h2>
                   <p className="text-gray-600">จัดการรายการในบิล</p>
                 </div>
                 <Button size="sm" onClick={() => setShowAddItem(true)}>
-                  + เพิ่ม
+                  + เพิ่มรายการ
                 </Button>
               </div>
               <div className="space-y-3">
@@ -483,18 +625,22 @@ export default function AdminDashboard() {
                 )}
               </div>
             </Card>
+          </div>
+        )}
 
-            {/* Payment Methods */}
+        {/* Payments Tab */}
+        {activeTab === 'payments' && (
+          <div className="space-y-6">
             <Card className="shadow-lg">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    💳 ช่องทางรับเงิน
+                    💳 ช่องทางรับเงิน ({bill.paymentMethods.length})
                   </h2>
                   <p className="text-gray-600">จัดการช่องทางการชำระเงิน</p>
                 </div>
                 <Button size="sm" onClick={() => setShowAddPayment(true)}>
-                  + เพิ่ม
+                  + เพิ่มช่องทาง
                 </Button>
               </div>
               <div className="space-y-3">
@@ -545,92 +691,19 @@ export default function AdminDashboard() {
               </div>
             </Card>
           </div>
+        )}
 
-          {/* Right Column - Summary */}
+        {/* Requests Tab */}
+        {activeTab === 'requests' && (
           <div className="space-y-6">
-            {/* Summary */}
-            <Card className="shadow-lg">
-              <div className="mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  📊 สรุปยอด
-                </h2>
-                <p className="text-gray-600">ยอดสุทธิของแต่ละคน</p>
-              </div>
-              <div className="space-y-3">
-                {summaries.map((summary) => (
-                  <div
-                    key={summary.memberId}
-                    className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-8 h-8 rounded-full shadow-sm"
-                          style={{
-                            backgroundColor: bill.members.find((m) => m.id === summary.memberId)?.color,
-                          }}
-                        />
-                        <span className="font-bold text-gray-900">
-                          {summary.memberName}
-                        </span>
-                      </div>
-                      <span
-                        className={`font-bold text-lg ${
-                          summary.balance >= 0
-                            ? 'text-emerald-600'
-                            : 'text-red-600'
-                        }`}
-                      >
-                        {summary.balance >= 0 ? '+' : ''}{formatCurrency(Math.abs(summary.balance))}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-600 space-y-1 pl-10">
-                      <p>หาร: {formatCurrency(summary.totalShared)}</p>
-                      <p>จ่าย: {formatCurrency(summary.totalPaid)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* Transactions */}
-            <Card className="shadow-lg">
-              <div className="mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  💸 รายการโอนเงิน
-                </h2>
-                <p className="text-gray-600">ใครควรจ่ายให้ใคร</p>
-              </div>
-              <div className="space-y-3">
-                {transactions.map((transaction, index) => (
-                  <div
-                    key={index}
-                    className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm"
-                  >
-                    <p className="text-sm text-gray-600 mb-1">
-                      {transaction.fromName} → {transaction.toName}
-                    </p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                      {formatCurrency(transaction.amount)}
-                    </p>
-                  </div>
-                ))}
-                {transactions.length === 0 && (
-                  <div className="text-center py-4">
-                    <p className="text-gray-400">ไม่มีรายการโอนเงิน</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Requests Management */}
+            {/* Pending Requests */}
             {bill.requests.filter((r) => r.status === 'pending').length > 0 && (
               <Card className="shadow-lg">
-                <div className="mb-4">
+                <div className="mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">
                     📝 คำขอจากสมาชิก
                   </h2>
-                  <p className="text-gray-600">คำขอที่รอการพิจารณา</p>
+                  <p className="text-gray-600">คำขอที่รอการพิจารณา ({bill.requests.filter((r) => r.status === 'pending').length})</p>
                 </div>
                 <div className="space-y-3">
                   {bill.requests
@@ -757,8 +830,9 @@ export default function AdminDashboard() {
               </Card>
             )}
           </div>
-        </div>
+        )}
       </div>
+    </div>
 
       {/* Add/Edit Member Modal */}
       <Modal

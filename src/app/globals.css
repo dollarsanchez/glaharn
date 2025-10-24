@@ -78,3 +78,18 @@ body {
 .gradient-bg-light {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
+
+/* Hide scrollbar */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Improve touch scrolling on mobile */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+}

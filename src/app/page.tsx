@@ -33,11 +33,11 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-24">
-        <div className="max-w-5xl mx-auto px-6 lg:px-8">
+      <section className="pt-20 sm:pt-28 md:pt-32 pb-16 sm:pb-20 md:pb-24 px-4">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center">
             {/* Headline */}
-            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold text-gray-900 mb-8 leading-[1.1] tracking-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-gray-900 mb-6 sm:mb-8 leading-[1.1] tracking-tight">
               แบ่งบิล
               <br />
               <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
@@ -46,7 +46,7 @@ export default function Home() {
             </h1>
 
             {/* Subheadline */}
-            <p className="text-xl text-gray-500 mb-12 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-500 mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
               คำนวณค่าใช้จ่ายแบบละเอียด ใครกินอะไรแชร์เท่านั้น
             </p>
 
