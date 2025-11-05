@@ -771,120 +771,150 @@ export default function BillPage() {
         <Card>
           <h3 className="text-lg font-bold text-gray-900 mb-4">💳 แนบสลิปการโอนเงิน</h3>
 
-          {member.paymentSlipUrl ? (
-            <div className="space-y-4">
-              {member.paymentVerified ? (
-                <div className="bg-gradient-to-r from-emerald-100 to-teal-100 border-2 border-emerald-400 rounded-xl p-5 shadow-md">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center shadow-md">
-                      <span className="text-white text-xl">✓</span>
-                    </div>
-                    <div>
-                      <p className="text-emerald-800 font-bold text-lg">ยืนยันการชำระเงินแล้ว</p>
-                      <p className="text-emerald-700 text-sm">Admin ได้ตรวจสอบสลิปของคุณเรียบร้อยแล้ว</p>
-                    </div>
-                  </div>
-                  <img
-                    src={member.paymentSlipUrl}
-                    alt="Payment Slip"
-                    className="w-full max-w-sm rounded-lg border-2 border-emerald-400 mb-3 shadow-sm"
-                  />
-                  <div className="flex gap-2">
-                    <a
-                      href={member.paymentSlipUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-emerald-700 hover:text-emerald-800 font-medium text-sm hover:underline"
-                    >
-                      📷 ดูขนาดเต็ม
-                    </a>
+          {/* Check if deadline has passed */}
+          {bill.optOutDeadline && new Date(bill.optOutDeadline) > new Date() ? (
+            // Show notice while deadline is still active
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+              <div className="flex items-start gap-3">
+                <span className="text-3xl">⏰</span>
+                <div className="flex-1">
+                  <p className="font-bold text-blue-900 text-lg mb-2">
+                    ยังไม่ถึงเวลาแนบสลิป
+                  </p>
+                  <p className="text-blue-700 mb-3">
+                    การแนบสลิปจะเปิดให้ใช้งานหลังจากปิดรับคำขอไม่หาร
+                  </p>
+                  <div className="bg-white rounded-lg p-3 border border-blue-300">
+                    <p className="text-sm text-blue-800">
+                      📅 สามารถแนบสลิปได้หลังจาก:{' '}
+                      <span className="font-semibold">
+                        {new Date(bill.optOutDeadline).toLocaleString('th-TH', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })}
+                      </span>
+                    </p>
                   </div>
                 </div>
-              ) : (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">📎</span>
-                    </div>
-                    <div>
-                      <p className="text-blue-800 font-medium">คุณได้แนบสลิปแล้ว</p>
-                      <p className="text-blue-600 text-sm">รอ Admin ตรวจสอบ</p>
-                    </div>
-                  </div>
-                  <img
-                    src={member.paymentSlipUrl}
-                    alt="Payment Slip"
-                    className="w-full max-w-sm rounded-lg border border-blue-300 mb-3"
-                  />
-                  <div className="flex gap-2">
-                    <a
-                      href={member.paymentSlipUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
-                    >
-                      📷 ดูขนาดเต็ม
-                    </a>
-                    <button
-                      onClick={handleRemoveSlip}
-                      className="text-red-600 hover:text-red-700 font-medium text-sm hover:underline ml-4"
-                    >
-                      🗑️ ลบสลิป
-                    </button>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <p className="text-gray-600 text-sm">แนบหลักฐานการโอนเงินเพื่อให้ Admin ตรวจสอบได้ง่ายขึ้น</p>
-
-              {slipPreview ? (
-                <div className="space-y-3">
-                  <img
-                    src={slipPreview}
-                    alt="Slip Preview"
-                    className="w-full max-w-sm rounded-lg border border-gray-300"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleUploadSlip}
-                      disabled={isUploadingSlip}
-                      className="flex-1"
-                    >
-                      {isUploadingSlip ? 'กำลังอัปโหลด...' : 'อัปโหลดสลิป'}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setSlipFile(null);
-                        setSlipPreview('');
-                      }}
-                      disabled={isUploadingSlip}
-                    >
-                      ยกเลิก
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleSlipFileChange}
-                    className="hidden"
-                    id="slip-upload"
-                  />
-                  <label htmlFor="slip-upload">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer transition-colors">
-                      <div className="text-4xl mb-2">📄</div>
-                      <p className="text-gray-700 font-medium">คลิกเพื่อเลือกรูปสลิป</p>
-                      <p className="text-gray-500 text-sm mt-1">รองรับ JPG, PNG, WEBP (สูงสุด 5MB)</p>
+            // Show slip upload section after deadline
+            member.paymentSlipUrl ? (
+              <div className="space-y-4">
+                {member.paymentVerified ? (
+                  <div className="bg-gradient-to-r from-emerald-100 to-teal-100 border-2 border-emerald-400 rounded-xl p-5 shadow-md">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center shadow-md">
+                        <span className="text-white text-xl">✓</span>
+                      </div>
+                      <div>
+                        <p className="text-emerald-800 font-bold text-lg">ยืนยันการชำระเงินแล้ว</p>
+                        <p className="text-emerald-700 text-sm">Admin ได้ตรวจสอบสลิปของคุณเรียบร้อยแล้ว</p>
+                      </div>
                     </div>
-                  </label>
-                </div>
-              )}
-            </div>
+                    <img
+                      src={member.paymentSlipUrl}
+                      alt="Payment Slip"
+                      className="w-full max-w-sm rounded-lg border-2 border-emerald-400 mb-3 shadow-sm"
+                    />
+                    <div className="flex gap-2">
+                      <a
+                        href={member.paymentSlipUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-700 hover:text-emerald-800 font-medium text-sm hover:underline"
+                      >
+                        📷 ดูขนาดเต็ม
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm">📎</span>
+                      </div>
+                      <div>
+                        <p className="text-blue-800 font-medium">คุณได้แนบสลิปแล้ว</p>
+                        <p className="text-blue-600 text-sm">รอ Admin ตรวจสอบ</p>
+                      </div>
+                    </div>
+                    <img
+                      src={member.paymentSlipUrl}
+                      alt="Payment Slip"
+                      className="w-full max-w-sm rounded-lg border border-blue-300 mb-3"
+                    />
+                    <div className="flex gap-2">
+                      <a
+                        href={member.paymentSlipUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
+                      >
+                        📷 ดูขนาดเต็ม
+                      </a>
+                      <button
+                        onClick={handleRemoveSlip}
+                        className="text-red-600 hover:text-red-700 font-medium text-sm hover:underline ml-4"
+                      >
+                        🗑️ ลบสลิป
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-gray-600 text-sm">แนบหลักฐานการโอนเงินเพื่อให้ Admin ตรวจสอบได้ง่ายขึ้น</p>
+
+                {slipPreview ? (
+                  <div className="space-y-3">
+                    <img
+                      src={slipPreview}
+                      alt="Slip Preview"
+                      className="w-full max-w-sm rounded-lg border border-gray-300"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleUploadSlip}
+                        disabled={isUploadingSlip}
+                        className="flex-1"
+                      >
+                        {isUploadingSlip ? 'กำลังอัปโหลด...' : 'อัปโหลดสลิป'}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setSlipFile(null);
+                          setSlipPreview('');
+                        }}
+                        disabled={isUploadingSlip}
+                      >
+                        ยกเลิก
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSlipFileChange}
+                      className="hidden"
+                      id="slip-upload"
+                    />
+                    <label htmlFor="slip-upload">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer transition-colors">
+                        <div className="text-4xl mb-2">📄</div>
+                        <p className="text-gray-700 font-medium">คลิกเพื่อเลือกรูปสลิป</p>
+                        <p className="text-gray-500 text-sm mt-1">รองรับ JPG, PNG, WEBP (สูงสุด 5MB)</p>
+                      </div>
+                    </label>
+                  </div>
+                )}
+              </div>
+            )
           )}
         </Card>
 
