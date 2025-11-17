@@ -868,7 +868,7 @@ export default function AdminDashboard() {
                                   <img
                                     src={member.paymentSlipUrl}
                                     alt={`${member.name}'s payment slip`}
-                                    className="w-32 h-32 object-cover rounded-lg border border-emerald-300 hover:scale-105 transition-transform cursor-pointer"
+                                    className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg border border-emerald-300 hover:scale-105 transition-transform cursor-pointer"
                                   />
                                 </a>
                               </div>
@@ -1071,7 +1071,7 @@ export default function AdminDashboard() {
                                 <img
                                   src={member.paymentSlipUrl}
                                   alt={`${member.name}'s payment slip`}
-                                  className="w-32 h-32 object-cover rounded-xl border-3 border-white shadow-lg group-hover/slip:scale-105 transition-transform"
+                                  className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl border-3 border-white shadow-lg group-hover/slip:scale-105 transition-transform"
                                 />
                                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover/slip:bg-opacity-10 rounded-xl transition-all flex items-center justify-center">
                                   <span className="text-white opacity-0 group-hover/slip:opacity-100 font-bold text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">
@@ -1320,7 +1320,7 @@ export default function AdminDashboard() {
                                 <img
                                   src={request.paymentMethod.imageUrl}
                                   alt="QR Code"
-                                  className="w-32 h-32 object-contain mt-2 border border-gray-200 rounded-lg"
+                                  className="w-24 h-24 sm:w-32 sm:h-32 object-contain mt-2 border border-gray-200 rounded-lg"
                                 />
                                 <a
                                   href={request.paymentMethod.imageUrl}
@@ -1789,7 +1789,7 @@ export default function AdminDashboard() {
                   <img
                     src={qrcodePreview}
                     alt="QR Code Preview"
-                    className="w-48 h-48 object-contain border-2 border-gray-200 rounded-xl"
+                    className="w-full max-w-xs sm:max-w-sm object-contain border-2 border-gray-200 rounded-xl"
                   />
                 </div>
               )}

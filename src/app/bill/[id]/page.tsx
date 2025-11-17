@@ -816,7 +816,7 @@ export default function BillPage() {
                     <img
                       src={member.paymentSlipUrl}
                       alt="Payment Slip"
-                      className="w-full max-w-sm rounded-lg border-2 border-emerald-400 mb-3 shadow-sm"
+                      className="w-full max-w-xs sm:max-w-sm rounded-lg border-2 border-emerald-400 mb-3 shadow-sm"
                     />
                     <div className="flex gap-2">
                       <a
@@ -873,7 +873,7 @@ export default function BillPage() {
                     <img
                       src={slipPreview}
                       alt="Slip Preview"
-                      className="w-full max-w-sm rounded-lg border border-gray-300"
+                      className="w-full max-w-xs sm:max-w-sm rounded-lg border border-gray-300"
                     />
                     <div className="flex gap-2">
                       <Button
@@ -1099,7 +1099,7 @@ export default function BillPage() {
                   onChange={handleQRFileChange}
                 />
                 {qrcodePreview && (
-                  <img src={qrcodePreview} alt="Preview" className="mt-2 w-48 h-48 object-contain rounded-lg border border-gray-200" />
+                  <img src={qrcodePreview} alt="Preview" className="mt-2 w-full max-w-xs sm:max-w-sm object-contain rounded-lg border border-gray-200" />
                 )}
               </div>
             )}
