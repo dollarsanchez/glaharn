@@ -66,7 +66,7 @@ export default function AdminDashboard() {
   const [optOutDeadlineTime, setOptOutDeadlineTime] = useState('');
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'items' | 'payments' | 'requests'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'items' | 'payments' | 'requests' | 'settings'>('overview');
 
   // Search & Sort state
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
@@ -519,7 +519,8 @@ export default function AdminDashboard() {
     { id: 'members' as const, label: 'สมาชิก', icon: '👥', count: bill.members.length },
     { id: 'items' as const, label: 'รายการอาหาร', icon: '🍽️', count: bill.items.length },
     { id: 'payments' as const, label: 'ช่องทางรับเงิน', icon: '💳', count: bill.paymentMethods.length },
-    { id: 'requests' as const, label: 'คำขอ & คอมเมนต์', icon: '💬', badge: pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount },
+    { id: 'requests' as const, label: 'คำขอ', icon: '💬', badge: pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount },
+    { id: 'settings' as const, label: 'ตั้งค่า', icon: '⚙️' },
   ];
 
   return (
@@ -615,6 +616,61 @@ export default function AdminDashboard() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Quick Actions */}
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <span>⚡</span>
+                <span>การดำเนินการด่วน</span>
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <button
+                  onClick={() => setShowAddItem(true)}
+                  className="group p-4 bg-gradient-to-br from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
+                >
+                  <div className="text-center text-white">
+                    <div className="text-3xl mb-2">🍽️</div>
+                    <div className="font-bold text-sm">เพิ่มเมนู</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setShowAddMember(true)}
+                  className="group p-4 bg-gradient-to-br from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
+                >
+                  <div className="text-center text-white">
+                    <div className="text-3xl mb-2">👤</div>
+                    <div className="font-bold text-sm">เพิ่มสมาชิก</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setShowAddPayment(true)}
+                  className="group p-4 bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
+                >
+                  <div className="text-center text-white">
+                    <div className="text-3xl mb-2">💳</div>
+                    <div className="font-bold text-sm">เพิ่มช่องทาง</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className="group p-4 bg-gradient-to-br from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
+                >
+                  <div className="text-center text-white">
+                    <div className="text-3xl mb-2">⏰</div>
+                    <div className="font-bold text-sm">ตั้งเวลา</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setShowShareLink(true)}
+                  className="group p-4 bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
+                >
+                  <div className="text-center text-white">
+                    <div className="text-3xl mb-2">📤</div>
+                    <div className="font-bold text-sm">แชร์ลิงก์</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Quick Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg">
@@ -712,6 +768,78 @@ export default function AdminDashboard() {
               </Card>
             </div>
 
+            {/* Latest Activities */}
+            <Card className="shadow-lg">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <span>🔔</span>
+                  <span>กิจกรรมล่าสุด</span>
+                </h2>
+                <p className="text-gray-600">กิจกรรมและการอัปเดตล่าสุด</p>
+              </div>
+              <div className="space-y-3">
+                {/* Payment Verified Members */}
+                {bill.members.filter(m => m.paymentVerified).slice(0, 3).map(member => (
+                  <div key={member.id} className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-sm" style={{ backgroundColor: member.color }}>
+                      {member.name.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{member.name}</p>
+                      <p className="text-sm text-emerald-700">✓ ยืนยันการชำระเงินแล้ว</p>
+                    </div>
+                    <Badge variant="success" size="sm">ชำระแล้ว</Badge>
+                  </div>
+                ))}
+
+                {/* Members with Payment Slips */}
+                {bill.members.filter(m => m.paymentSlipUrl && !m.paymentVerified).slice(0, 2).map(member => (
+                  <div key={member.id} className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-sm" style={{ backgroundColor: member.color }}>
+                      {member.name.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">{member.name}</p>
+                      <p className="text-sm text-amber-700">อัปโหลดสลิปแล้ว - รอการตรวจสอบ</p>
+                    </div>
+                    <Badge variant="warning" size="sm">รอตรวจสอบ</Badge>
+                  </div>
+                ))}
+
+                {/* Pending Requests */}
+                {(pendingRequestsCount + pendingPaymentRequestsCount > 0) && (
+                  <div className="flex items-center gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => setActiveTab('requests')}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-500 text-white font-bold shadow-sm">
+                      {pendingRequestsCount + pendingPaymentRequestsCount}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">คำขอรออนุมัติ</p>
+                      <p className="text-sm text-indigo-700">
+                        {pendingRequestsCount > 0 && `${pendingRequestsCount} คำขอไม่หาร`}
+                        {pendingRequestsCount > 0 && pendingPaymentRequestsCount > 0 && ', '}
+                        {pendingPaymentRequestsCount > 0 && `${pendingPaymentRequestsCount} คำขอช่องทางรับเงิน`}
+                      </p>
+                    </div>
+                    <span className="text-indigo-600">→</span>
+                  </div>
+                )}
+
+                {/* No Activities */}
+                {bill.members.filter(m => m.paymentVerified || m.paymentSlipUrl).length === 0 &&
+                 (pendingRequestsCount + pendingPaymentRequestsCount === 0) && (
+                  <div className="text-center py-8">
+                    <div className="text-5xl mb-3">📭</div>
+                    <p className="text-gray-500">ยังไม่มีกิจกรรม</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
             {/* Opt-Out Deadline Settings */}
             <Card className="shadow-lg border-2 border-indigo-200 bg-indigo-50">
               <div className="mb-4">
@@ -1276,14 +1404,49 @@ export default function AdminDashboard() {
         {/* Requests Tab */}
         {activeTab === 'requests' && (
           <div className="space-y-6">
+            {/* Notification Center Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <span>🔔</span>
+                  <span>ศูนย์แจ้งเตือน</span>
+                </h2>
+                <p className="text-gray-600 mt-1">
+                  คำขอและข้อความที่รอการตอบกลับ
+                  {(pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount > 0) && (
+                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                      {pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount} รายการ
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* All Clear Message */}
+            {(pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount === 0) && (
+              <Card className="shadow-lg border-2 border-emerald-200 bg-emerald-50">
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">✅</div>
+                  <h3 className="text-2xl font-bold text-emerald-900 mb-2">เรียบร้อยแล้ว!</h3>
+                  <p className="text-emerald-700">ไม่มีคำขอหรือข้อความที่รอการตอบกลับ</p>
+                </div>
+              </Card>
+            )}
+
             {/* Payment Method Requests */}
             {bill.paymentMethodRequests.filter((r) => r.status === 'pending').length > 0 && (
-              <Card className="shadow-lg">
+              <Card className="shadow-lg border-l-4 border-purple-500">
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    💳 คำขอเพิ่มช่องทางรับเงิน
-                  </h2>
-                  <p className="text-gray-600">คำขอที่รอการพิจารณา ({bill.paymentMethodRequests.filter((r) => r.status === 'pending').length})</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold">
+                      💳
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      คำขอเพิ่มช่องทางรับเงิน
+                    </h2>
+                    <Badge variant="warning">{bill.paymentMethodRequests.filter((r) => r.status === 'pending').length}</Badge>
+                  </div>
+                  <p className="text-gray-600 text-sm ml-10">รอการพิจารณาจากคุณ</p>
                 </div>
                 <div className="space-y-3">
                   {bill.paymentMethodRequests
@@ -1379,12 +1542,18 @@ export default function AdminDashboard() {
 
             {/* Item Requests */}
             {bill.requests.filter((r) => r.status === 'pending').length > 0 && (
-              <Card className="shadow-lg">
+              <Card className="shadow-lg border-l-4 border-amber-500">
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    📝 คำขอไม่หารรายการ
-                  </h2>
-                  <p className="text-gray-600">คำขอที่รอการพิจารณา ({bill.requests.filter((r) => r.status === 'pending').length})</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold">
+                      📝
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      คำขอไม่หารรายการ
+                    </h2>
+                    <Badge variant="warning">{bill.requests.filter((r) => r.status === 'pending').length}</Badge>
+                  </div>
+                  <p className="text-gray-600 text-sm ml-10">สมาชิกขอไม่หารเมนูบางรายการ</p>
                 </div>
                 <div className="space-y-3">
                   {bill.requests
@@ -1435,12 +1604,20 @@ export default function AdminDashboard() {
 
             {/* Comments Management */}
             {bill.comments.length > 0 && (
-              <Card className="shadow-lg">
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    💬 ความคิดเห็น
-                  </h2>
-                  <p className="text-gray-600">ข้อความจากสมาชิก</p>
+              <Card className="shadow-lg border-l-4 border-indigo-500">
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
+                      💬
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      ความคิดเห็น
+                    </h2>
+                    {unreadCommentsCount > 0 && (
+                      <Badge variant="warning">{unreadCommentsCount} ใหม่</Badge>
+                    )}
+                  </div>
+                  <p className="text-gray-600 text-sm ml-10">ข้อความและคำถามจากสมาชิก</p>
                 </div>
                 <div className="space-y-3">
                   {bill.comments.map((comment) => (
