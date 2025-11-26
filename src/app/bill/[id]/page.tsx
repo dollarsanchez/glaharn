@@ -686,11 +686,11 @@ export default function BillPage() {
         )}
 
         {/* Payment Methods for Receiving */}
-        {memberSummary && memberSummary.balance > 0 && (
+        {memberTransactions.some(t => t.to === selectedMember) && (
           <Card className="bg-emerald-50 border-emerald-200">
             <h2 className="text-xl font-bold text-gray-900 mb-1">ช่องทางรับเงินของคุณ</h2>
             <p className="text-emerald-700 text-sm mb-4">
-              คุณจะได้รับเงิน {formatCurrency(memberSummary.balance)} - เพิ่มช่องทางเพื่อให้เพื่อนโอนได้
+              เพิ่มช่องทางรับเงินเพื่อให้เพื่อนโอนเงินให้คุณได้
             </p>
 
             <div className="space-y-3 mb-4">
