@@ -52,6 +52,7 @@ export function calculateMemberSummaries(bill: Bill): MemberSummary[] {
 /**
  * คำนวณ transactions แบบ proportional payment
  * แต่ละคนจะจ่ายตามสัดส่วนที่แท้จริงของเมนูที่เขาหาร
+ * รวมรายการที่ซ้ำซ้อนเป็นยอดสุทธิ (net transactions)
  */
 export function calculateTransactions(summaries: MemberSummary[], bill: Bill): Transaction[] {
   const transactions: Transaction[] = [];
@@ -82,22 +83,52 @@ export function calculateTransactions(summaries: MemberSummary[], bill: Bill): T
     });
   });
 
-  // แปลง map เป็น array และกรองเฉพาะที่มีจำนวนมากกว่า 0.01
-  Object.entries(transactionMap).forEach(([key, amount]) => {
-    if (amount > 0.01) {
-      const [fromId, toId] = key.split('->');
-      const fromSummary = summaries.find(s => s.memberId === fromId);
-      const toSummary = summaries.find(s => s.memberId === toId);
+  // รวมรายการที่ซ้ำซ้อนเป็นยอดสุทธิ (A->B และ B->A)
+  const netTransactionMap: Record<string, number> = {};
+  const processedPairs = new Set<string>();
 
-      if (fromSummary && toSummary) {
-        transactions.push({
-          from: fromId,
-          fromName: fromSummary.memberName,
-          to: toId,
-          toName: toSummary.memberName,
-          amount: Math.round(amount * 100) / 100, // round to 2 decimal places
-        });
+  Object.entries(transactionMap).forEach(([key, amount]) => {
+    if (amount <= 0.01) return; // ข้ามยอดเล็กน้อย
+
+    const [fromId, toId] = key.split('->');
+    const pairKey = [fromId, toId].sort().join('<->'); // สร้าง key ที่ไม่สนใจทิศทาง
+
+    // ถ้าคู่นี้ถูกประมวลผลแล้ว ข้ามไป
+    if (processedPairs.has(pairKey)) return;
+    processedPairs.add(pairKey);
+
+    // หาจำนวนในทิศทางตรงกันข้าม
+    const reverseKey = `${toId}->${fromId}`;
+    const reverseAmount = transactionMap[reverseKey] || 0;
+
+    // คำนวณยอดสุทธิ
+    const netAmount = amount - reverseAmount;
+
+    if (Math.abs(netAmount) > 0.01) {
+      // ถ้า netAmount เป็นบวก แปลว่า fromId ต้องจ่ายให้ toId
+      // ถ้า netAmount เป็นลบ แปลว่า toId ต้องจ่ายให้ fromId
+      if (netAmount > 0) {
+        netTransactionMap[`${fromId}->${toId}`] = netAmount;
+      } else {
+        netTransactionMap[`${toId}->${fromId}`] = Math.abs(netAmount);
       }
+    }
+  });
+
+  // แปลง map เป็น array
+  Object.entries(netTransactionMap).forEach(([key, amount]) => {
+    const [fromId, toId] = key.split('->');
+    const fromSummary = summaries.find(s => s.memberId === fromId);
+    const toSummary = summaries.find(s => s.memberId === toId);
+
+    if (fromSummary && toSummary) {
+      transactions.push({
+        from: fromId,
+        fromName: fromSummary.memberName,
+        to: toId,
+        toName: toSummary.memberName,
+        amount: Math.round(amount * 100) / 100, // round to 2 decimal places
+      });
     }
   });
 

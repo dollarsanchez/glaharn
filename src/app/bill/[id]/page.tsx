@@ -585,7 +585,11 @@ export default function BillPage() {
 
             <div className="space-y-3">
               {memberTransactions.map((transaction, index) => {
+                const isPayer = transaction.from === selectedMember;
                 const isReceiver = transaction.to === selectedMember;
+                const otherMemberId = isPayer ? transaction.to : transaction.from;
+                const otherMemberName = isPayer ? transaction.toName : transaction.fromName;
+
                 return (
                   <div
                     key={index}
@@ -595,7 +599,7 @@ export default function BillPage() {
                         : 'bg-rose-50 border-rose-200'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className={`text-sm font-medium mb-1 ${
                           isReceiver ? 'text-emerald-700' : 'text-rose-700'
@@ -603,7 +607,7 @@ export default function BillPage() {
                           {isReceiver ? '📥 คุณจะได้รับเงินจาก' : '📤 คุณต้องจ่ายเงินให้'}
                         </p>
                         <p className="font-bold text-gray-900 text-lg">
-                          {isReceiver ? transaction.fromName : transaction.toName}
+                          {otherMemberName}
                         </p>
                       </div>
                       <p className={`text-2xl font-bold ${
@@ -612,102 +616,72 @@ export default function BillPage() {
                         {isReceiver ? '+' : '-'}{formatCurrency(transaction.amount)}
                       </p>
                     </div>
+
+                    {/* แสดงช่องทางการโอนเงินสำหรับคนที่ต้องจ่าย */}
+                    {isPayer && bill.optOutDeadline && new Date(bill.optOutDeadline) <= new Date() && (
+                      <div className="pt-3 border-t border-rose-200">
+                        <p className="text-sm font-medium text-rose-900 mb-2">ช่องทางการโอนเงิน:</p>
+                        <div className="space-y-2">
+                          {bill.paymentMethods
+                            .filter((method) => method.ownerId === otherMemberId)
+                            .map((method, idx) => (
+                              <div key={idx} className="p-3 bg-white rounded-lg border border-rose-200">
+                                {method.type === 'promptpay' && (
+                                  <div>
+                                    <Badge variant="info">พร้อมเพย์</Badge>
+                                    <p className="text-lg font-mono font-bold text-gray-900 mt-1">
+                                      {method.phoneNumber}
+                                    </p>
+                                  </div>
+                                )}
+                                {method.type === 'qrcode' && (
+                                  <div>
+                                    <Badge variant="success">QR Code</Badge>
+                                    <a
+                                      href={method.imageUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-2 px-3 py-1.5 mt-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 font-semibold"
+                                    >
+                                      📷 ดู QR Code
+                                    </a>
+                                  </div>
+                                )}
+                                {method.type === 'bank' && (
+                                  <div>
+                                    <Badge variant="warning">บัญชีธนาคาร</Badge>
+                                    <div className="mt-1 space-y-0.5">
+                                      <p className="font-bold text-gray-900">{method.bankName}</p>
+                                      <p className="text-lg font-mono font-bold text-gray-900">{method.accountNumber}</p>
+                                      <p className="text-sm text-gray-700">{method.accountName}</p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          {bill.paymentMethods.filter((method) => method.ownerId === otherMemberId).length === 0 && (
+                            <div className="p-3 bg-white rounded-lg border border-rose-200">
+                              <p className="text-sm text-gray-500 text-center">
+                                ยังไม่มีช่องทางการรับเงิน - รอ {otherMemberName} เพิ่มช่องทาง
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* แสดงข้อความสำหรับคนที่จะได้รับเงิน */}
+                    {isReceiver && (
+                      <div className="pt-3 border-t border-emerald-200">
+                        <p className="text-sm text-emerald-700">
+                          💡 เพิ่มช่องทางรับเงินของคุณด้านล่าง เพื่อให้ {otherMemberName} โอนได้
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
-          </Card>
-        )}
-
-        {/* 3. Payment Methods for Paying */}
-        {memberSummary && memberSummary.balance < 0 && (
-          <Card>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">ช่องทางการโอนเงิน</h2>
-            <p className="text-gray-500 text-sm mb-4">โอนเงินตามช่องทางด้านล่าง</p>
-
-            {/* Check if deadline has passed */}
-            {bill.optOutDeadline && new Date(bill.optOutDeadline) > new Date() ? (
-              // Show notice while deadline is still active
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-                <div className="flex items-start gap-3">
-                  <span className="text-3xl">⏰</span>
-                  <div className="flex-1">
-                    <p className="font-bold text-blue-900 text-lg mb-2">
-                      ยังไม่ถึงเวลาชำระเงิน
-                    </p>
-                    <p className="text-blue-700 mb-3">
-                      ช่องทางการชำระเงินจะเปิดให้ใช้งานหลังจากปิดรับคำขอไม่หาร
-                    </p>
-                    <div className="bg-white rounded-lg p-3 border border-blue-300">
-                      <p className="text-sm text-blue-800">
-                        📅 ช่องทางชำระเงินจะแสดงหลังจาก:{' '}
-                        <span className="font-semibold">
-                          {new Date(bill.optOutDeadline).toLocaleString('th-TH', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                          })}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Show payment methods after deadline
-              bill.paymentMethods.length > 0 ? (
-                <div className="space-y-3">
-                  {bill.paymentMethods.map((method, index) => (
-                    <div key={index} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
-                      {method.type === 'promptpay' && (
-                        <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <Badge variant="info">พร้อมเพย์</Badge>
-                            <p className="text-sm text-gray-600">เจ้าของ: {method.ownerName}</p>
-                          </div>
-                          <p className="text-2xl font-mono font-bold text-gray-900">
-                            {method.phoneNumber}
-                          </p>
-                        </div>
-                      )}
-                      {method.type === 'qrcode' && (
-                        <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <Badge variant="success">QR Code</Badge>
-                            <p className="text-sm text-gray-600">เจ้าของ: {method.ownerName}</p>
-                          </div>
-                          <a
-                            href={method.imageUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold"
-                          >
-                            📷 ดู QR Code
-                          </a>
-                        </div>
-                      )}
-                      {method.type === 'bank' && (
-                        <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <Badge variant="warning">บัญชีธนาคาร</Badge>
-                            <p className="text-sm text-gray-600">เจ้าของ: {method.ownerName}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-lg font-bold text-gray-900">{method.bankName}</p>
-                            <p className="text-xl font-mono font-bold text-gray-900">{method.accountNumber}</p>
-                            <p className="text-gray-700">{method.accountName}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-gray-50 rounded-xl p-6 text-center">
-                  <p className="text-gray-500">ยังไม่มีช่องทางการชำระเงิน</p>
-                  <p className="text-gray-400 text-sm mt-1">รอ Admin เพิ่มช่องทางการรับเงิน</p>
-                </div>
-              )
-            )}
           </Card>
         )}
 
