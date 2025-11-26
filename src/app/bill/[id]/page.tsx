@@ -618,55 +618,79 @@ export default function BillPage() {
                     </div>
 
                     {/* แสดงช่องทางการโอนเงินสำหรับคนที่ต้องจ่าย */}
-                    {isPayer && bill.optOutDeadline && new Date(bill.optOutDeadline) <= new Date() && (
+                    {isPayer && (
                       <div className="pt-3 border-t border-rose-200">
-                        <p className="text-sm font-medium text-rose-900 mb-2">ช่องทางการโอนเงิน:</p>
-                        <div className="space-y-2">
-                          {bill.paymentMethods
-                            .filter((method) => method.ownerId === otherMemberId)
-                            .map((method, idx) => (
-                              <div key={idx} className="p-3 bg-white rounded-lg border border-rose-200">
-                                {method.type === 'promptpay' && (
-                                  <div>
-                                    <Badge variant="info">พร้อมเพย์</Badge>
-                                    <p className="text-lg font-mono font-bold text-gray-900 mt-1">
-                                      {method.phoneNumber}
-                                    </p>
-                                  </div>
-                                )}
-                                {method.type === 'qrcode' && (
-                                  <div>
-                                    <Badge variant="success">QR Code</Badge>
-                                    <a
-                                      href={method.imageUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-2 px-3 py-1.5 mt-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 font-semibold"
-                                    >
-                                      📷 ดู QR Code
-                                    </a>
-                                  </div>
-                                )}
-                                {method.type === 'bank' && (
-                                  <div>
-                                    <Badge variant="warning">บัญชีธนาคาร</Badge>
-                                    <div className="mt-1 space-y-0.5">
-                                      <p className="font-bold text-gray-900">{method.bankName}</p>
-                                      <p className="text-lg font-mono font-bold text-gray-900">{method.accountNumber}</p>
-                                      <p className="text-sm text-gray-700">{method.accountName}</p>
-                                    </div>
-                                  </div>
-                                )}
+                        {/* ถ้ามี deadline และยังไม่ถึงเวลา แสดงข้อความรอ */}
+                        {bill.optOutDeadline && new Date(bill.optOutDeadline) > new Date() ? (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-start gap-2">
+                              <span className="text-xl">⏰</span>
+                              <div>
+                                <p className="font-semibold text-blue-900 text-sm mb-1">
+                                  ยังไม่ถึงเวลาชำระเงิน
+                                </p>
+                                <p className="text-sm text-blue-700">
+                                  ช่องทางการชำระเงินจะเปิดให้ใช้งานหลังจาก:{' '}
+                                  {new Date(bill.optOutDeadline).toLocaleString('th-TH', {
+                                    dateStyle: 'medium',
+                                    timeStyle: 'short',
+                                  })}
+                                </p>
                               </div>
-                            ))}
-                          {bill.paymentMethods.filter((method) => method.ownerId === otherMemberId).length === 0 && (
-                            <div className="p-3 bg-white rounded-lg border border-rose-200">
-                              <p className="text-sm text-gray-500 text-center">
-                                ยังไม่มีช่องทางการรับเงิน - รอ {otherMemberName} เพิ่มช่องทาง
-                              </p>
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          // แสดงช่องทางการโอนเงิน
+                          <>
+                            <p className="text-sm font-medium text-rose-900 mb-2">ช่องทางการโอนเงิน:</p>
+                            <div className="space-y-2">
+                              {bill.paymentMethods
+                                .filter((method) => method.ownerId === otherMemberId)
+                                .map((method, idx) => (
+                                  <div key={idx} className="p-3 bg-white rounded-lg border border-rose-200">
+                                    {method.type === 'promptpay' && (
+                                      <div>
+                                        <Badge variant="info">พร้อมเพย์</Badge>
+                                        <p className="text-lg font-mono font-bold text-gray-900 mt-1">
+                                          {method.phoneNumber}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {method.type === 'qrcode' && (
+                                      <div>
+                                        <Badge variant="success">QR Code</Badge>
+                                        <a
+                                          href={method.imageUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-2 px-3 py-1.5 mt-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 font-semibold"
+                                        >
+                                          📷 ดู QR Code
+                                        </a>
+                                      </div>
+                                    )}
+                                    {method.type === 'bank' && (
+                                      <div>
+                                        <Badge variant="warning">บัญชีธนาคาร</Badge>
+                                        <div className="mt-1 space-y-0.5">
+                                          <p className="font-bold text-gray-900">{method.bankName}</p>
+                                          <p className="text-lg font-mono font-bold text-gray-900">{method.accountNumber}</p>
+                                          <p className="text-sm text-gray-700">{method.accountName}</p>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              {bill.paymentMethods.filter((method) => method.ownerId === otherMemberId).length === 0 && (
+                                <div className="p-3 bg-white rounded-lg border border-rose-200">
+                                  <p className="text-sm text-gray-500 text-center">
+                                    ยังไม่มีช่องทางการรับเงิน - รอ {otherMemberName} เพิ่มช่องทาง
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
 
