@@ -50,48 +50,56 @@ export function calculateMemberSummaries(bill: Bill): MemberSummary[] {
 }
 
 /**
- * คำนวณ transactions ที่ง่ายที่สุดในการจ่ายเงินกัน
- * ใช้ algorithm แบบ greedy
+ * คำนวณ transactions แบบ proportional payment
+ * แต่ละคนจะจ่ายตามสัดส่วนที่แท้จริงของเมนูที่เขาหาร
  */
-export function calculateTransactions(summaries: MemberSummary[]): Transaction[] {
+export function calculateTransactions(summaries: MemberSummary[], bill: Bill): Transaction[] {
   const transactions: Transaction[] = [];
+  const transactionMap: Record<string, number> = {}; // key: "fromId->toId", value: amount
 
-  // แยกคนที่ต้องจ่ายและคนที่ต้องได้รับ
-  const debtors = summaries
-    .filter((s) => s.balance < -0.01) // ติดลบ = ต้องจ่าย
-    .map((s) => ({ ...s, balance: -s.balance }))
-    .sort((a, b) => b.balance - a.balance);
+  // คำนวณการจ่ายเงินสำหรับแต่ละเมนู
+  bill.items.forEach((item) => {
+    const sharedCount = item.sharedBy.length;
+    if (sharedCount === 0) return;
 
-  const creditors = summaries
-    .filter((s) => s.balance > 0.01) // ติดบวก = ต้องได้รับ
-    .map((s) => ({ ...s }))
-    .sort((a, b) => b.balance - a.balance);
+    const pricePerPerson = item.price / sharedCount;
 
-  let i = 0;
-  let j = 0;
+    // สำหรับแต่ละคนที่หารเมนูนี้
+    item.sharedBy.forEach((sharedMemberId) => {
+      // สำหรับแต่ละคนที่จ่ายเมนูนี้
+      item.paidBy.forEach((paidMemberId) => {
+        // ถ้าคนเดียวกัน ไม่ต้องโอน
+        if (sharedMemberId === paidMemberId) return;
 
-  while (i < debtors.length && j < creditors.length) {
-    const debtor = debtors[i];
-    const creditor = creditors[j];
+        // คำนวณจำนวนที่คนนี้จ่ายไปในเมนูนี้
+        const paidAmount = item.paidAmounts?.[paidMemberId] ?? item.price / item.paidBy.length;
+        // คำนวณสัดส่วนที่ต้องจ่าย
+        const proportionToPay = (pricePerPerson / item.price) * paidAmount;
 
-    const amount = Math.min(debtor.balance, creditor.balance);
-
-    if (amount > 0.01) {
-      transactions.push({
-        from: debtor.memberId,
-        fromName: debtor.memberName,
-        to: creditor.memberId,
-        toName: creditor.memberName,
-        amount: Math.round(amount * 100) / 100, // round to 2 decimal places
+        const key = `${sharedMemberId}->${paidMemberId}`;
+        transactionMap[key] = (transactionMap[key] || 0) + proportionToPay;
       });
+    });
+  });
+
+  // แปลง map เป็น array และกรองเฉพาะที่มีจำนวนมากกว่า 0.01
+  Object.entries(transactionMap).forEach(([key, amount]) => {
+    if (amount > 0.01) {
+      const [fromId, toId] = key.split('->');
+      const fromSummary = summaries.find(s => s.memberId === fromId);
+      const toSummary = summaries.find(s => s.memberId === toId);
+
+      if (fromSummary && toSummary) {
+        transactions.push({
+          from: fromId,
+          fromName: fromSummary.memberName,
+          to: toId,
+          toName: toSummary.memberName,
+          amount: Math.round(amount * 100) / 100, // round to 2 decimal places
+        });
+      }
     }
-
-    debtor.balance -= amount;
-    creditor.balance -= amount;
-
-    if (debtor.balance < 0.01) i++;
-    if (creditor.balance < 0.01) j++;
-  }
+  });
 
   return transactions;
 }

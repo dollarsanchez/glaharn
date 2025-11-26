@@ -171,7 +171,7 @@ export default function AdminDashboard() {
   }
 
   const summaries = calculateMemberSummaries(bill);
-  const transactions = calculateTransactions(summaries);
+  const transactions = calculateTransactions(summaries, bill);
   const totalAmount = bill.items.reduce((sum, item) => sum + item.price, 0);
 
   const toggleMemberSelection = (memberId: string, list: string[], setter: (list: string[]) => void) => {

@@ -299,7 +299,7 @@ export default function BillPage() {
   if (!member) return null;
 
   const summaries = calculateMemberSummaries(bill);
-  const transactions = calculateTransactions(summaries);
+  const transactions = calculateTransactions(summaries, bill);
   const memberSummary = summaries.find((s) => s.memberId === selectedMember);
 
   const memberItems = bill.items.filter((item) => item.sharedBy.includes(selectedMember));
