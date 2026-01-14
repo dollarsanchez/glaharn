@@ -65,7 +65,7 @@ export default function CommandPalette({ commands }: CommandPaletteProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="🔍 Type a command or search..."
-            className="w-full px-4 py-3 text-lg border-2 border-emerald-200 rounded-lg focus:border-emerald-500 focus:outline-none"
+            className="w-full px-4 py-3 text-lg border-2 border-violet-200 rounded-lg focus:border-violet-500 focus:outline-none"
             autoFocus
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">
@@ -84,7 +84,7 @@ export default function CommandPalette({ commands }: CommandPaletteProps) {
               <button
                 key={command.id}
                 onClick={() => handleSelect(command)}
-                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-emerald-50 transition-colors text-left"
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-violet-50 transition-colors text-left"
               >
                 <span className="text-2xl">{command.icon}</span>
                 <span className="font-medium text-gray-900">{command.label}</span>

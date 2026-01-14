@@ -35,7 +35,7 @@ export default function FAB({ actions, badge }: FABProps) {
                 animation: `slideIn 0.2s ease-out ${index * 0.05}s both`,
               }}
             >
-              <span className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center text-white text-xl shadow-md">
+              <span className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xl shadow-md">
                 {action.icon}
               </span>
               <span className="text-sm font-semibold text-gray-700 whitespace-nowrap pr-2">
@@ -63,7 +63,7 @@ export default function FAB({ actions, badge }: FABProps) {
           setShowTooltip(false);
         }}
         className={`
-          w-14 h-14 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-full
+          w-14 h-14 bg-gradient-to-br from-violet-600 to-purple-600 rounded-full
           shadow-lg hover:shadow-xl transition-all transform hover:scale-110
           flex items-center justify-center text-white text-2xl
           ${isOpen ? 'rotate-45' : 'rotate-0'}

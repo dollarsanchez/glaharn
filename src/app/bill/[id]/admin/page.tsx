@@ -137,7 +137,7 @@ export default function AdminDashboard() {
 
   if (!bill) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 flex items-center justify-center p-4">
         <Card className="text-center max-w-md w-full shadow-xl">
           <div className="text-6xl mb-4">📭</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -152,10 +152,10 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center p-4">
         <Card className="max-w-md w-full shadow-2xl">
           <div className="text-center mb-8">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-5xl shadow-xl">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white text-5xl shadow-xl">
               🔐
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-3">
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
               }}
               fullWidth
               size="lg"
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
             >
               เข้าสู่ระบบ
             </Button>
@@ -644,7 +644,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 flex">
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -662,10 +662,10 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-700 to-purple-600 bg-clip-text text-transparent">
                     {bill.name}
                   </h1>
-                  <div className="px-2 py-1 bg-emerald-100 rounded-full text-xs font-mono font-bold text-emerald-700">
+                  <div className="px-2 py-1 bg-violet-100 rounded-full text-xs font-mono font-bold text-violet-700">
                     {bill.adminId}
                   </div>
                 </div>
@@ -684,7 +684,7 @@ export default function AdminDashboard() {
                   )}
                   <span className="flex items-center gap-1">
                     <span>💰</span>
-                    <span className="font-bold text-emerald-600">{formatCurrency(totalAmount)}</span>
+                    <span className="font-bold text-violet-600">{formatCurrency(totalAmount)}</span>
                   </span>
                 </div>
               </div>
@@ -726,10 +726,10 @@ export default function AdminDashboard() {
             <div className="space-y-6">
               {/* Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white">
+                <Card className="bg-gradient-to-br from-violet-500 to-purple-500 text-white">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-emerald-100 text-sm font-medium">Total Amount</p>
+                      <p className="text-violet-100 text-sm font-medium">Total Amount</p>
                       <p className="text-3xl font-bold mt-1">{formatCurrency(totalAmount)}</p>
                     </div>
                     <div className="text-5xl opacity-80">💰</div>
@@ -814,7 +814,7 @@ export default function AdminDashboard() {
                               {formatCurrency(summary.totalPaid)}
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <span className={`font-bold ${summary.balance > 0 ? 'text-emerald-600' : summary.balance < 0 ? 'text-rose-600' : 'text-gray-500'}`}>
+                              <span className={`font-bold ${summary.balance > 0 ? 'text-violet-600' : summary.balance < 0 ? 'text-rose-600' : 'text-gray-500'}`}>
                                 {formatCurrency(Math.abs(summary.balance))}
                               </span>
                             </td>
@@ -847,7 +847,7 @@ export default function AdminDashboard() {
                       return (
                         <div
                           key={index}
-                          className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-emerald-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow"
+                          className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-violet-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow"
                         >
                           <div className="flex-1 flex items-center gap-3">
                             <div
@@ -861,7 +861,7 @@ export default function AdminDashboard() {
                               <p className="text-sm text-gray-500">Must transfer</p>
                             </div>
                           </div>
-                          <div className="text-2xl text-emerald-600 font-bold">→</div>
+                          <div className="text-2xl text-violet-600 font-bold">→</div>
                           <div className="flex-1 flex items-center gap-3">
                             <div
                               className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md"
@@ -875,7 +875,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-xl font-bold text-emerald-600">{formatCurrency(tx.amount)}</p>
+                            <p className="text-xl font-bold text-violet-600">{formatCurrency(tx.amount)}</p>
                           </div>
                         </div>
                       );
@@ -914,7 +914,7 @@ export default function AdminDashboard() {
                       <select
                         value={memberFilter}
                         onChange={(e) => setMemberFilter(e.target.value as any)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
                       >
                         <option value="all">All</option>
                         <option value="verified">Verified</option>
@@ -927,7 +927,7 @@ export default function AdminDashboard() {
                       <select
                         value={memberSort}
                         onChange={(e) => setMemberSort(e.target.value as any)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
                       >
                         <option value="name">Name</option>
                         <option value="balance">Balance</option>
@@ -977,7 +977,7 @@ export default function AdminDashboard() {
                         <Card
                           className={`cursor-pointer transition-all group ${
                             isSelected
-                              ? 'shadow-lg ring-2 ring-emerald-500 bg-emerald-50'
+                              ? 'shadow-lg ring-2 ring-violet-500 bg-violet-50'
                               : 'shadow hover:shadow-md'
                           }`}
                           onClick={() => setSelectedMemberId(member.id)}
@@ -1015,7 +1015,7 @@ export default function AdminDashboard() {
                                 <p className="font-bold text-gray-900 truncate">{member.name}</p>
                                 {summary && (
                                   <p className="text-sm text-gray-600">
-                                    Paid: <span className="font-semibold text-emerald-600">
+                                    Paid: <span className="font-semibold text-violet-600">
                                       {formatCurrency(summary.totalPaid)}
                                     </span>
                                   </p>
@@ -1025,7 +1025,7 @@ export default function AdminDashboard() {
                                 const hasVerifiedSlips = member.paymentSlips?.some(s => s.verified) || member.paymentVerified;
                                 const hasPendingSlips = member.paymentSlips?.some(s => !s.verified) || (member.paymentSlipUrl && !member.paymentVerified);
                                 if (hasVerifiedSlips) {
-                                  return <span className="text-emerald-500 text-xl">✓</span>;
+                                  return <span className="text-violet-500 text-xl">✓</span>;
                                 } else if (hasPendingSlips) {
                                   return <span className="text-amber-500 text-xl">⚠️</span>;
                                 } else {
@@ -1040,7 +1040,7 @@ export default function AdminDashboard() {
                                 <ProgressBar
                                   value={summary.totalPaid}
                                   max={summary.totalShared}
-                                  color={hasVerifiedSlips ? 'emerald' : hasPendingSlips ? 'amber' : 'rose'}
+                                  color={hasVerifiedSlips ? 'violet' : hasPendingSlips ? 'amber' : 'rose'}
                                   showPercentage={false}
                                 />
                               );
@@ -1103,9 +1103,9 @@ export default function AdminDashboard() {
 
                       {/* Stats */}
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
-                          <p className="text-sm text-emerald-700 font-medium">Total Paid</p>
-                          <p className="text-2xl font-bold text-emerald-900 mt-1">
+                        <div className="p-4 bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-200">
+                          <p className="text-sm text-violet-700 font-medium">Total Paid</p>
+                          <p className="text-2xl font-bold text-violet-900 mt-1">
                             {formatCurrency(selectedMemberSummary.totalPaid)}
                           </p>
                         </div>
@@ -1113,7 +1113,7 @@ export default function AdminDashboard() {
                         <div className={`p-4 rounded-xl border ${
                           selectedMemberSummary.balance < 0
                             ? 'bg-gradient-to-br from-rose-50 to-pink-50 border-rose-200'
-                            : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
+                            : 'bg-gradient-to-br from-green-50 to-violet-50 border-green-200'
                         }`}>
                           <p className={`text-sm font-medium ${
                             selectedMemberSummary.balance < 0 ? 'text-rose-700' : 'text-green-700'
@@ -1174,7 +1174,7 @@ export default function AdminDashboard() {
                             .map((item) => (
                               <div key={item.id} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
                                 <span className="font-medium text-gray-900">{item.name}</span>
-                                <span className="text-emerald-600 font-semibold">{formatCurrency(item.price)}</span>
+                                <span className="text-violet-600 font-semibold">{formatCurrency(item.price)}</span>
                               </div>
                             ))}
                         </div>
@@ -1274,7 +1274,7 @@ export default function AdminDashboard() {
                           <Card
                             className={`cursor-pointer transition-all group ${
                               isSelected
-                                ? 'shadow-lg ring-2 ring-emerald-500 bg-emerald-50'
+                                ? 'shadow-lg ring-2 ring-violet-500 bg-violet-50'
                                 : 'shadow hover:shadow-md'
                             }`}
                             onClick={() => setSelectedItemId(item.id)}
@@ -1312,7 +1312,7 @@ export default function AdminDashboard() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="font-bold text-gray-900 truncate">{item.name}</p>
-                                <p className="text-sm text-emerald-600 font-semibold">
+                                <p className="text-sm text-violet-600 font-semibold">
                                   {formatCurrency(item.price)}
                                 </p>
                               </div>
@@ -1342,7 +1342,7 @@ export default function AdminDashboard() {
                           </div>
                           <div>
                             <h2 className="text-2xl font-bold text-gray-900">{selectedItem.name}</h2>
-                            <p className="text-3xl font-bold text-emerald-600 mt-1">
+                            <p className="text-3xl font-bold text-violet-600 mt-1">
                               {formatCurrency(selectedItem.price)}
                             </p>
                           </div>
@@ -1375,9 +1375,9 @@ export default function AdminDashboard() {
 
                       {/* Stats */}
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
-                          <p className="text-sm text-emerald-700 font-medium">Price per Person</p>
-                          <p className="text-2xl font-bold text-emerald-900 mt-1">
+                        <div className="p-4 bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-200">
+                          <p className="text-sm text-violet-700 font-medium">Price per Person</p>
+                          <p className="text-2xl font-bold text-violet-900 mt-1">
                             {formatCurrency(selectedItem.price / selectedItem.sharedBy.length)}
                           </p>
                         </div>
@@ -1398,7 +1398,7 @@ export default function AdminDashboard() {
                             const member = bill.members.find((m) => m.id === memberId);
                             if (!member) return null;
                             return (
-                              <div key={memberId} className="flex items-center gap-3 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg">
+                              <div key={memberId} className="flex items-center gap-3 p-3 bg-gradient-to-r from-violet-50 to-purple-50 rounded-lg">
                                 <div
                                   className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md"
                                   style={{ backgroundColor: member.color }}
@@ -1522,37 +1522,37 @@ export default function AdminDashboard() {
                       </div>
 
                       {payment.type === 'promptpay' && (
-                        <div className="bg-emerald-50 rounded-lg p-4">
-                          <p className="text-sm font-medium text-emerald-800 mb-1">PromptPay</p>
-                          <p className="text-lg font-mono font-bold text-emerald-900">{payment.phoneNumber}</p>
+                        <div className="bg-violet-50 rounded-lg p-4">
+                          <p className="text-sm font-medium text-violet-800 mb-1">PromptPay</p>
+                          <p className="text-lg font-mono font-bold text-violet-900">{payment.phoneNumber}</p>
                         </div>
                       )}
 
                       {payment.type === 'qrcode' && (
-                        <div className="bg-teal-50 rounded-lg p-4">
-                          <p className="text-sm font-medium text-teal-800 mb-2">QR Code</p>
+                        <div className="bg-purple-50 rounded-lg p-4">
+                          <p className="text-sm font-medium text-purple-800 mb-2">QR Code</p>
                           <img
                             src={payment.imageUrl}
                             alt="QR Code"
-                            className="w-full rounded-lg border-2 border-teal-200"
+                            className="w-full rounded-lg border-2 border-purple-200"
                           />
                         </div>
                       )}
 
                       {payment.type === 'bank' && (
-                        <div className="bg-cyan-50 rounded-lg p-4 space-y-2">
-                          <p className="text-sm font-medium text-cyan-800">Bank Account</p>
+                        <div className="bg-indigo-50 rounded-lg p-4 space-y-2">
+                          <p className="text-sm font-medium text-indigo-800">Bank Account</p>
                           <div>
-                            <p className="text-xs text-cyan-700">Bank</p>
-                            <p className="font-semibold text-cyan-900">{payment.bankName}</p>
+                            <p className="text-xs text-indigo-700">Bank</p>
+                            <p className="font-semibold text-indigo-900">{payment.bankName}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-cyan-700">Account Number</p>
-                            <p className="font-mono font-semibold text-cyan-900">{payment.accountNumber}</p>
+                            <p className="text-xs text-indigo-700">Account Number</p>
+                            <p className="font-mono font-semibold text-indigo-900">{payment.accountNumber}</p>
                           </div>
                           <div>
-                            <p className="text-xs text-cyan-700">Account Name</p>
-                            <p className="font-semibold text-cyan-900">{payment.accountName}</p>
+                            <p className="text-xs text-indigo-700">Account Name</p>
+                            <p className="font-semibold text-indigo-900">{payment.accountName}</p>
                           </div>
                         </div>
                       )}
@@ -1568,13 +1568,13 @@ export default function AdminDashboard() {
             <div className="space-y-6">
               {/* Payment Method Requests */}
               {bill.paymentMethodRequests.filter((r) => r.status === 'pending').length > 0 && (
-                <Card className="shadow-lg border-l-4 border-emerald-500">
+                <Card className="shadow-lg border-l-4 border-violet-500">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">💳 Payment Method Requests</h2>
                   <div className="space-y-3">
                     {bill.paymentMethodRequests
                       .filter((r) => r.status === 'pending')
                       .map((request) => (
-                        <div key={request.id} className="p-4 bg-emerald-50 rounded-lg">
+                        <div key={request.id} className="p-4 bg-violet-50 rounded-lg">
                           <div className="flex justify-between items-start mb-3">
                             <div>
                               <p className="font-semibold text-gray-900">{request.paymentMethod.ownerName}</p>
@@ -1590,7 +1590,7 @@ export default function AdminDashboard() {
                             <Button
                               onClick={() => handleApprovePaymentRequest(request.id)}
                               size="sm"
-                              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                              className="flex-1 bg-violet-600 hover:bg-violet-700"
                             >
                               ✓ Approve
                             </Button>
@@ -1636,7 +1636,7 @@ export default function AdminDashboard() {
                               <Button
                                 onClick={() => handleApproveRequest(request.id)}
                                 size="sm"
-                                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                                className="flex-1 bg-violet-600 hover:bg-violet-700"
                               >
                                 ✓ Approve
                               </Button>
@@ -1658,7 +1658,7 @@ export default function AdminDashboard() {
 
               {/* Comments */}
               {bill.comments.filter((c) => !c.adminReply).length > 0 && (
-                <Card className="shadow-lg border-l-4 border-cyan-500">
+                <Card className="shadow-lg border-l-4 border-indigo-500">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">💬 Comments</h2>
                   <div className="space-y-4">
                     {bill.comments
@@ -1667,7 +1667,7 @@ export default function AdminDashboard() {
                         const member = bill.members.find((m) => m.id === comment.memberId);
                         if (!member) return null;
                         return (
-                          <div key={comment.id} className="p-4 bg-cyan-50 rounded-lg">
+                          <div key={comment.id} className="p-4 bg-indigo-50 rounded-lg">
                             <div className="flex items-start gap-3 mb-3">
                               <div
                                 className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
@@ -1691,7 +1691,7 @@ export default function AdminDashboard() {
                                   <Button
                                     onClick={() => handleReplyToComment(comment.id)}
                                     size="sm"
-                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                                    className="flex-1 bg-violet-600 hover:bg-violet-700"
                                   >
                                     Send Reply
                                   </Button>
@@ -1764,8 +1764,8 @@ export default function AdminDashboard() {
                   Set a deadline for opt-out requests
                 </p>
                 {bill.optOutDeadline && (
-                  <div className="mb-4 p-3 bg-teal-50 rounded-lg">
-                    <p className="text-sm text-teal-800">
+                  <div className="mb-4 p-3 bg-purple-50 rounded-lg">
+                    <p className="text-sm text-purple-800">
                       Deadline: {new Date(bill.optOutDeadline).toLocaleString('th-TH')}
                     </p>
                   </div>
@@ -1787,7 +1787,7 @@ export default function AdminDashboard() {
                 <div className="flex gap-2">
                   <Button
                     onClick={handleSetOptOutDeadline}
-                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                    className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                   >
                     Save
                   </Button>
@@ -1808,7 +1808,7 @@ export default function AdminDashboard() {
                 <Button
                   onClick={handleDeleteBill}
                   variant="secondary"
-                  className="w-full sm:w-auto bg-rose-600 text-white hover:bg-rose-700"
+                  className="w-full sm:w-auto bg-rose-100 text-gray-900 hover:bg-rose-200 border-2 border-rose-300"
                 >
                   🗑️ Delete Bill
                 </Button>
@@ -1851,7 +1851,7 @@ export default function AdminDashboard() {
             autoFocus
           />
           <div className="flex gap-2">
-            <Button onClick={handleAddMember} fullWidth className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
+            <Button onClick={handleAddMember} fullWidth className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
               {editingMemberId ? 'Save' : 'Add Member'}
             </Button>
             <Button
@@ -1892,7 +1892,7 @@ export default function AdminDashboard() {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
                     itemWizardStep >= step
-                      ? 'bg-emerald-600 text-white'
+                      ? 'bg-violet-600 text-white'
                       : 'bg-gray-200 text-gray-500'
                   }`}
                 >
@@ -1901,7 +1901,7 @@ export default function AdminDashboard() {
                 {step < 3 && (
                   <div
                     className={`w-12 h-1 ${
-                      itemWizardStep > step ? 'bg-emerald-600' : 'bg-gray-200'
+                      itemWizardStep > step ? 'bg-violet-600' : 'bg-gray-200'
                     }`}
                   />
                 )}
@@ -1931,7 +1931,7 @@ export default function AdminDashboard() {
                 onClick={() => setItemWizardStep(2)}
                 fullWidth
                 disabled={!itemName.trim() || !itemPrice}
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
               >
                 Next →
               </Button>
@@ -1946,7 +1946,7 @@ export default function AdminDashboard() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => selectAllMembers(setSelectedPayers)}
-                    className="text-sm text-emerald-600 hover:text-emerald-700"
+                    className="text-sm text-violet-600 hover:text-violet-700"
                   >
                     Select All
                   </button>
@@ -1966,7 +1966,7 @@ export default function AdminDashboard() {
                     onClick={() => toggleMemberSelection(member.id, selectedPayers, setSelectedPayers)}
                     className={`p-3 rounded-lg border-2 transition-all ${
                       selectedPayers.includes(member.id)
-                        ? 'border-emerald-600 bg-emerald-50'
+                        ? 'border-violet-600 bg-violet-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -1988,7 +1988,7 @@ export default function AdminDashboard() {
                   onClick={() => setItemWizardStep(3)}
                   fullWidth
                   disabled={selectedPayers.length === 0}
-                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                  className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                 >
                   Next →
                 </Button>
@@ -2004,7 +2004,7 @@ export default function AdminDashboard() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => selectAllMembers(setSelectedShared)}
-                    className="text-sm text-emerald-600 hover:text-emerald-700"
+                    className="text-sm text-violet-600 hover:text-violet-700"
                   >
                     Select All
                   </button>
@@ -2027,7 +2027,7 @@ export default function AdminDashboard() {
                   }}
                   className={`p-2 rounded-lg border-2 transition-all text-center ${
                     quickSplitMode === 'equal'
-                      ? 'border-emerald-600 bg-emerald-50'
+                      ? 'border-violet-600 bg-violet-50'
                       : 'border-gray-200 hover:border-gray-300 bg-white'
                   }`}
                 >
@@ -2042,7 +2042,7 @@ export default function AdminDashboard() {
                   }}
                   className={`p-2 rounded-lg border-2 transition-all text-center ${
                     quickSplitMode === 'common'
-                      ? 'border-teal-600 bg-teal-50'
+                      ? 'border-purple-600 bg-purple-50'
                       : 'border-gray-200 hover:border-gray-300 bg-white'
                   }`}
                 >
@@ -2072,7 +2072,7 @@ export default function AdminDashboard() {
                     onClick={() => toggleMemberSelection(member.id, selectedShared, setSelectedShared)}
                     className={`p-3 rounded-lg border-2 transition-all ${
                       selectedShared.includes(member.id)
-                        ? 'border-teal-600 bg-teal-50'
+                        ? 'border-purple-600 bg-purple-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -2094,7 +2094,7 @@ export default function AdminDashboard() {
                   onClick={handleAddItem}
                   fullWidth
                   disabled={selectedShared.length === 0}
-                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                  className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
                 >
                   {editingItemId ? 'Save' : 'Add Item'}
                 </Button>
@@ -2128,7 +2128,7 @@ export default function AdminDashboard() {
             <select
               value={paymentOwnerId}
               onChange={(e) => setPaymentOwnerId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
             >
               <option value="">-- Select Member --</option>
               {bill.members.map((member) => (
@@ -2148,7 +2148,7 @@ export default function AdminDashboard() {
                 onClick={() => setPaymentType('promptpay')}
                 className={`p-3 rounded-lg border-2 transition-all ${
                   paymentType === 'promptpay'
-                    ? 'border-emerald-600 bg-emerald-50'
+                    ? 'border-violet-600 bg-violet-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -2158,7 +2158,7 @@ export default function AdminDashboard() {
                 onClick={() => setPaymentType('qrcode')}
                 className={`p-3 rounded-lg border-2 transition-all ${
                   paymentType === 'qrcode'
-                    ? 'border-teal-600 bg-teal-50'
+                    ? 'border-purple-600 bg-purple-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -2168,7 +2168,7 @@ export default function AdminDashboard() {
                 onClick={() => setPaymentType('bank')}
                 className={`p-3 rounded-lg border-2 transition-all ${
                   paymentType === 'bank'
-                    ? 'border-cyan-600 bg-cyan-50'
+                    ? 'border-indigo-600 bg-indigo-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -2201,7 +2201,7 @@ export default function AdminDashboard() {
                 <img
                   src={qrcodePreview}
                   alt="Preview"
-                  className="mt-4 w-48 h-48 object-cover rounded-lg border-2 border-teal-200"
+                  className="mt-4 w-48 h-48 object-cover rounded-lg border-2 border-purple-200"
                 />
               )}
             </div>
@@ -2235,7 +2235,7 @@ export default function AdminDashboard() {
               onClick={handleAddPaymentMethod}
               fullWidth
               disabled={isUploading}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
             >
               {isUploading ? 'Uploading...' : 'Add Payment Method'}
             </Button>
@@ -2296,8 +2296,8 @@ export default function AdminDashboard() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Admin Code
             </label>
-            <div className="px-4 py-3 bg-emerald-50 rounded-lg border-2 border-emerald-200">
-              <p className="text-center font-mono font-bold text-2xl text-emerald-700">
+            <div className="px-4 py-3 bg-violet-50 rounded-lg border-2 border-violet-200">
+              <p className="text-center font-mono font-bold text-2xl text-violet-700">
                 {bill.adminId}
               </p>
             </div>

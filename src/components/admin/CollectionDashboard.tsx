@@ -48,18 +48,18 @@ export default function CollectionDashboard({ bill, summaries }: CollectionDashb
       <div className="mb-6">
         <div className="flex justify-between items-baseline mb-2">
           <span className="text-sm font-medium text-gray-700">Collected</span>
-          <span className="text-2xl font-bold text-emerald-600">
+          <span className="text-2xl font-bold text-violet-600">
             {formatCurrency(collectedAmount)} / {formatCurrency(totalAmount)}
           </span>
         </div>
-        <ProgressBar value={collectedAmount} max={totalAmount} color="emerald" showPercentage={false} />
+        <ProgressBar value={collectedAmount} max={totalAmount} color="violet" showPercentage={false} />
       </div>
 
       {/* Breakdown */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-          <p className="text-3xl font-bold text-emerald-600">{verifiedMembers.length}</p>
-          <p className="text-xs text-emerald-700 font-medium mt-1">Verified</p>
+        <div className="text-center p-3 bg-violet-50 rounded-lg border border-violet-200">
+          <p className="text-3xl font-bold text-violet-600">{verifiedMembers.length}</p>
+          <p className="text-xs text-violet-700 font-medium mt-1">Verified</p>
         </div>
 
         <div className="text-center p-3 bg-amber-50 rounded-lg border border-amber-200">
@@ -77,7 +77,7 @@ export default function CollectionDashboard({ bill, summaries }: CollectionDashb
       <div className="space-y-2 pt-4 border-t border-gray-200">
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-600">💰 Collected</span>
-          <span className="text-sm font-semibold text-emerald-600">{formatCurrency(collectedAmount)}</span>
+          <span className="text-sm font-semibold text-violet-600">{formatCurrency(collectedAmount)}</span>
         </div>
 
         {pendingAmount > 0 && (

@@ -71,7 +71,7 @@ export default function MemberPaymentSlips({
               key={idx}
               className={`relative overflow-hidden transition-all ${
                 slip.verified
-                  ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200'
+                  ? 'bg-gradient-to-br from-violet-50 to-purple-50 border-2 border-violet-200'
                   : 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200'
               }`}
             >
@@ -129,7 +129,7 @@ export default function MemberPaymentSlips({
                   <Button
                     onClick={() => onVerifySlip(idx)}
                     size="sm"
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                    className="flex-1 bg-violet-600 hover:bg-violet-700"
                   >
                     ✓ Verify
                   </Button>
@@ -192,7 +192,7 @@ export default function MemberPaymentSlips({
                     setSelectedSlipIndex(null);
                   }}
                   fullWidth
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  className="bg-violet-600 hover:bg-violet-700"
                 >
                   ✓ Verify This Slip
                 </Button>

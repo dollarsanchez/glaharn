@@ -143,7 +143,7 @@ export default function MemberPaymentMethods({
         <Button
           onClick={() => setShowAddModal(true)}
           size="sm"
-          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+          className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
         >
           + Add Method
         </Button>
@@ -240,7 +240,7 @@ export default function MemberPaymentMethods({
                 onClick={() => setPaymentType('promptpay')}
                 className={`p-4 rounded-xl border-2 transition-all ${
                   paymentType === 'promptpay'
-                    ? 'border-emerald-500 bg-emerald-50'
+                    ? 'border-violet-500 bg-violet-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -251,7 +251,7 @@ export default function MemberPaymentMethods({
                 onClick={() => setPaymentType('qrcode')}
                 className={`p-4 rounded-xl border-2 transition-all ${
                   paymentType === 'qrcode'
-                    ? 'border-emerald-500 bg-emerald-50'
+                    ? 'border-violet-500 bg-violet-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -262,7 +262,7 @@ export default function MemberPaymentMethods({
                 onClick={() => setPaymentType('bank')}
                 className={`p-4 rounded-xl border-2 transition-all ${
                   paymentType === 'bank'
-                    ? 'border-emerald-500 bg-emerald-50'
+                    ? 'border-violet-500 bg-violet-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -312,7 +312,7 @@ export default function MemberPaymentMethods({
                 </div>
               ) : (
                 <label className="block">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-emerald-400 cursor-pointer transition-colors">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-violet-400 cursor-pointer transition-colors">
                     <div className="text-4xl mb-2">📷</div>
                     <p className="text-sm text-gray-600">Click to upload QR code</p>
                   </div>
@@ -370,7 +370,7 @@ export default function MemberPaymentMethods({
               onClick={handleAddPaymentMethod}
               fullWidth
               disabled={isUploading}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
             >
               {isUploading ? 'Adding...' : 'Add Payment Method'}
             </Button>

@@ -25,16 +25,28 @@ body {
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Darker placeholder text for better visibility on white backgrounds */
+/* Black placeholder text for better visibility on white backgrounds */
 input::placeholder,
 textarea::placeholder {
-  color: #374151; /* gray-700 */
-  opacity: 1;
+  color: #111827; /* gray-900 - near black */
+  opacity: 0.7;
 }
 
 input:focus::placeholder,
 textarea:focus::placeholder {
-  color: #6b7280; /* gray-500 - slightly lighter when focused */
+  color: #374151; /* gray-700 - slightly lighter when focused */
+  opacity: 0.6;
+}
+
+/* Ensure select elements have dark text on white backgrounds */
+select {
+  color: #111827; /* gray-900 - near black */
+  background-color: white;
+}
+
+select option {
+  color: #111827; /* gray-900 - near black */
+  background-color: white;
 }
 
 /* Custom scrollbar */

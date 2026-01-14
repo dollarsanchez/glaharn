@@ -79,7 +79,7 @@ export default function BillTemplates({ bill, onApplyTemplate }: BillTemplatesPr
           <Button
             onClick={() => setShowSaveTemplate(true)}
             size="sm"
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
           >
             💾 Save Current
           </Button>
@@ -94,7 +94,7 @@ export default function BillTemplates({ bill, onApplyTemplate }: BillTemplatesPr
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {templates.map((template) => (
-              <Card key={template.id} className="bg-gradient-to-br from-gray-50 to-emerald-50 border border-gray-200">
+              <Card key={template.id} className="bg-gradient-to-br from-gray-50 to-violet-50 border border-gray-200">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h3 className="font-bold text-gray-900">{template.name}</h3>
@@ -129,7 +129,7 @@ export default function BillTemplates({ bill, onApplyTemplate }: BillTemplatesPr
                     onClick={() => onApplyTemplate(template.members)}
                     size="sm"
                     fullWidth
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    className="bg-violet-600 hover:bg-violet-700"
                   >
                     Apply
                   </Button>
@@ -163,8 +163,8 @@ export default function BillTemplates({ bill, onApplyTemplate }: BillTemplatesPr
         title="Save as Template"
       >
         <div className="space-y-4">
-          <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-            <p className="text-sm text-emerald-800">
+          <div className="p-3 bg-violet-50 rounded-lg border border-violet-200">
+            <p className="text-sm text-violet-800">
               Current members ({bill.members.length}): {bill.members.map(m => m.name).join(', ')}
             </p>
           </div>
@@ -189,7 +189,7 @@ export default function BillTemplates({ bill, onApplyTemplate }: BillTemplatesPr
               onClick={saveTemplate}
               fullWidth
               disabled={!templateName.trim()}
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
             >
               💾 Save Template
             </Button>

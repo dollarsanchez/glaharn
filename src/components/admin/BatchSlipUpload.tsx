@@ -118,7 +118,7 @@ export default function BatchSlipUpload({ members, billId, onUploadComplete }: B
                   key={member.id}
                   className={`relative flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
                     hasUpload
-                      ? 'border-emerald-500 bg-emerald-50'
+                      ? 'border-violet-500 bg-violet-50'
                       : 'border-gray-200 hover:border-gray-300 bg-white'
                   }`}
                 >
@@ -144,11 +144,11 @@ export default function BatchSlipUpload({ members, billId, onUploadComplete }: B
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 text-sm truncate">{member.name}</p>
                     {member.paymentSlipUrl && (
-                      <p className="text-xs text-emerald-600">Has slip</p>
+                      <p className="text-xs text-violet-600">Has slip</p>
                     )}
                   </div>
                   {hasUpload && (
-                    <span className="text-emerald-600 text-xl">✓</span>
+                    <span className="text-violet-600 text-xl">✓</span>
                   )}
                 </label>
               );
@@ -211,7 +211,7 @@ export default function BatchSlipUpload({ members, billId, onUploadComplete }: B
                 onClick={uploadAll}
                 fullWidth
                 disabled={isUploading || pendingCount === 0}
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
               >
                 {isUploading ? '⏳ Uploading...' : `📤 Upload All (${pendingCount})`}
               </Button>

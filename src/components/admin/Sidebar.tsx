@@ -49,10 +49,10 @@ export default function Sidebar({
           <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
             {!isCollapsed && (
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-purple-600 rounded-lg flex items-center justify-center">
                   <span className="text-white text-lg">💰</span>
                 </div>
-                <span className="font-bold text-lg bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">
+                <span className="font-bold text-lg bg-gradient-to-r from-violet-700 to-purple-600 bg-clip-text text-transparent">
                   กล้าหาร
                 </span>
               </div>
@@ -98,14 +98,14 @@ export default function Sidebar({
                       transition-all duration-200 relative
                       ${
                         activeTab === item.id
-                          ? 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 font-semibold shadow-sm'
+                          ? 'bg-gradient-to-r from-violet-50 to-purple-50 text-violet-700 font-semibold shadow-sm'
                           : 'text-gray-700 hover:bg-gray-50'
                       }
                     `}
                   >
                     {/* Active indicator */}
                     {activeTab === item.id && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-emerald-600 to-teal-600 rounded-r-full" />
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-violet-600 to-purple-600 rounded-r-full" />
                     )}
 
                     {/* Icon */}
@@ -131,7 +131,7 @@ export default function Sidebar({
           {/* Footer */}
           <div className="border-t border-gray-200 p-4">
             <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-full flex items-center justify-center text-white font-bold">
+              <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
                 A
               </div>
               {!isCollapsed && (

@@ -105,7 +105,7 @@ export default function MultipleSlipUpload({
                 key={idx}
                 className={`overflow-hidden ${
                   slip.verified
-                    ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200'
+                    ? 'bg-gradient-to-br from-violet-50 to-purple-50 border-2 border-violet-200'
                     : 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200'
                 }`}
               >
@@ -152,7 +152,7 @@ export default function MultipleSlipUpload({
 
         {pendingUploads.length === 0 ? (
           <label htmlFor="slip-upload" className="block">
-            <div className="border-4 border-dashed border-gray-300 rounded-2xl p-12 text-center hover:border-emerald-400 hover:bg-emerald-50 cursor-pointer transition-all duration-300 group">
+            <div className="border-4 border-dashed border-gray-300 rounded-2xl p-12 text-center hover:border-violet-400 hover:bg-violet-50 cursor-pointer transition-all duration-300 group">
               <div className="text-7xl mb-4 group-hover:scale-110 transition-transform">
                 📄
               </div>
@@ -215,7 +215,7 @@ export default function MultipleSlipUpload({
                 onClick={handleUploadAll}
                 fullWidth
                 disabled={isUploading}
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-lg py-4"
+                className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-lg py-4"
               >
                 {isUploading
                   ? '⏳ กำลังอัพโหลด...'

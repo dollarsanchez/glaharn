@@ -410,16 +410,16 @@ export default function BillPage() {
               </div>
               <div className={`rounded-xl p-4 border ${
                 memberSummary.balance >= 0
-                  ? 'bg-emerald-50 border-emerald-100'
+                  ? 'bg-violet-50 border-violet-100'
                   : 'bg-rose-50 border-rose-100'
               }`}>
                 <p className={`text-sm font-medium mb-1 ${
-                  memberSummary.balance >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                  memberSummary.balance >= 0 ? 'text-violet-700' : 'text-rose-700'
                 }`}>
                   ยอดสุทธิ
                 </p>
                 <p className={`text-2xl font-bold ${
-                  memberSummary.balance >= 0 ? 'text-emerald-900' : 'text-rose-900'
+                  memberSummary.balance >= 0 ? 'text-violet-900' : 'text-rose-900'
                 }`}>
                   {memberSummary.balance >= 0 ? '+' : ''}{formatCurrency(Math.abs(memberSummary.balance))}
                 </p>
@@ -575,14 +575,14 @@ export default function BillPage() {
                     key={index}
                     className={`p-4 rounded-xl border-2 ${
                       isReceiver
-                        ? 'bg-emerald-50 border-emerald-200'
+                        ? 'bg-violet-50 border-violet-200'
                         : 'bg-rose-50 border-rose-200'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className={`text-sm font-medium mb-1 ${
-                          isReceiver ? 'text-emerald-700' : 'text-rose-700'
+                          isReceiver ? 'text-violet-700' : 'text-rose-700'
                         }`}>
                           {isReceiver ? '📥 คุณจะได้รับเงินจาก' : '📤 คุณต้องจ่ายเงินให้'}
                         </p>
@@ -591,7 +591,7 @@ export default function BillPage() {
                         </p>
                       </div>
                       <p className={`text-2xl font-bold ${
-                        isReceiver ? 'text-emerald-600' : 'text-rose-600'
+                        isReceiver ? 'text-violet-600' : 'text-rose-600'
                       }`}>
                         {isReceiver ? '+' : '-'}{formatCurrency(transaction.amount)}
                       </p>
@@ -643,7 +643,7 @@ export default function BillPage() {
                                           href={method.imageUrl}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-2 px-3 py-1.5 mt-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 font-semibold"
+                                          className="inline-flex items-center gap-2 px-3 py-1.5 mt-2 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700 font-semibold"
                                         >
                                           📷 ดู QR Code
                                         </a>
@@ -676,8 +676,8 @@ export default function BillPage() {
 
                     {/* แสดงข้อความสำหรับคนที่จะได้รับเงิน */}
                     {isReceiver && (
-                      <div className="pt-3 border-t border-emerald-200">
-                        <p className="text-sm text-emerald-700">
+                      <div className="pt-3 border-t border-violet-200">
+                        <p className="text-sm text-violet-700">
                           💡 เพิ่มช่องทางรับเงินของคุณด้านล่าง เพื่อให้ {otherMemberName} โอนได้
                         </p>
                       </div>
@@ -691,9 +691,9 @@ export default function BillPage() {
 
         {/* Payment Methods for Receiving */}
         {memberTransactions.some(t => t.to === selectedMember) && (
-          <Card className="bg-emerald-50 border-emerald-200">
+          <Card className="bg-violet-50 border-violet-200">
             <h2 className="text-xl font-bold text-gray-900 mb-1">ช่องทางรับเงินของคุณ</h2>
-            <p className="text-emerald-700 text-sm mb-4">
+            <p className="text-violet-700 text-sm mb-4">
               เพิ่มช่องทางรับเงินเพื่อให้เพื่อนโอนเงินให้คุณได้
             </p>
 
@@ -701,7 +701,7 @@ export default function BillPage() {
               {bill.paymentMethods
                 .filter((method) => method.ownerId === selectedMember)
                 .map((method, index) => (
-                  <div key={index} className="p-4 bg-white rounded-xl border border-emerald-200">
+                  <div key={index} className="p-4 bg-white rounded-xl border border-violet-200">
                     {method.type === 'promptpay' && (
                       <div>
                         <Badge variant="info">พร้อมเพย์</Badge>
@@ -717,7 +717,7 @@ export default function BillPage() {
                           href={method.imageUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block mt-2 text-emerald-600 hover:text-emerald-700 font-semibold"
+                          className="block mt-2 text-violet-600 hover:text-violet-700 font-semibold"
                         >
                           📷 ดู QR Code
                         </a>
@@ -738,7 +738,7 @@ export default function BillPage() {
             <Button
               fullWidth
               onClick={() => setShowAddPaymentModal(true)}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-violet-600 hover:bg-violet-700"
             >
               + เพิ่มช่องทางรับเงิน
             </Button>
@@ -923,7 +923,7 @@ export default function BillPage() {
                   onClick={() => setPaymentType('qrcode')}
                   className={`p-3 rounded-lg border-2 text-sm font-medium ${
                     paymentType === 'qrcode'
-                      ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
+                      ? 'border-violet-600 bg-violet-50 text-violet-900'
                       : 'border-gray-200 text-gray-700 hover:border-gray-300'
                   }`}
                 >

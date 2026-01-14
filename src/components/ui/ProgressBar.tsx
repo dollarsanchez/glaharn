@@ -3,7 +3,7 @@
 interface ProgressBarProps {
   value: number;
   max: number;
-  color?: 'emerald' | 'rose' | 'amber' | 'blue';
+  color?: 'violet' | 'rose' | 'amber' | 'blue';
   label?: string;
   showPercentage?: boolean;
 }
@@ -11,21 +11,21 @@ interface ProgressBarProps {
 export default function ProgressBar({
   value,
   max,
-  color = 'emerald',
+  color = 'violet',
   label,
   showPercentage = true,
 }: ProgressBarProps) {
   const percentage = max > 0 ? Math.min((value / max) * 100, 100) : 0;
 
   const colorClasses = {
-    emerald: 'bg-emerald-500',
+    violet: 'bg-violet-500',
     rose: 'bg-rose-500',
     amber: 'bg-amber-500',
     blue: 'bg-blue-500',
   };
 
   const bgColorClasses = {
-    emerald: 'bg-emerald-100',
+    violet: 'bg-violet-100',
     rose: 'bg-rose-100',
     amber: 'bg-amber-100',
     blue: 'bg-blue-100',

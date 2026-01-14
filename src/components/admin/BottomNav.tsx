@@ -24,7 +24,7 @@ export default function BottomNav({ activeTab, onTabChange, pendingCount }: Bott
             onClick={() => onTabChange(item.id)}
             className={`flex flex-col items-center justify-center gap-1 transition-colors relative ${
               activeTab === item.id
-                ? 'text-emerald-600'
+                ? 'text-violet-600'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -36,7 +36,7 @@ export default function BottomNav({ activeTab, onTabChange, pendingCount }: Bott
               </span>
             )}
             {activeTab === item.id && (
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-b-full" />
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 to-purple-600 rounded-b-full" />
             )}
           </button>
         ))}

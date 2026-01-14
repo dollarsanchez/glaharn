@@ -34,7 +34,7 @@ export default function PaymentTimeline({ bill }: PaymentTimelineProps) {
             <div key={event.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
               <div className="flex-shrink-0">
                 {event.type === 'verified' ? (
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                  <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600">
                     ✓
                   </div>
                 ) : (

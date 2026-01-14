@@ -54,12 +54,12 @@ export default function Analytics({ bill, summaries }: AnalyticsProps) {
     <div className="space-y-6">
       {/* Smart Insights Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-lg">
+        <Card className="bg-gradient-to-br from-violet-500 to-purple-500 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-emerald-100 text-xs font-medium">🏆 Top Spender</p>
+              <p className="text-violet-100 text-xs font-medium">🏆 Top Spender</p>
               <p className="text-xl font-bold mt-1">{topSpenderMember?.name}</p>
-              <p className="text-sm text-emerald-100 mt-1">{formatCurrency(topSpender?.totalPaid || 0)}</p>
+              <p className="text-sm text-violet-100 mt-1">{formatCurrency(topSpender?.totalPaid || 0)}</p>
             </div>
             <div className="text-4xl opacity-80">💰</div>
           </div>
@@ -76,12 +76,12 @@ export default function Analytics({ bill, summaries }: AnalyticsProps) {
           </div>
         </Card>
 
-        <Card className="bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-lg">
+        <Card className="bg-gradient-to-br from-indigo-500 to-blue-500 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-cyan-100 text-xs font-medium">⭐ Most Shared</p>
+              <p className="text-indigo-100 text-xs font-medium">⭐ Most Shared</p>
               <p className="text-xl font-bold mt-1 truncate">{mostSharedItem?.name}</p>
-              <p className="text-sm text-cyan-100 mt-1">{mostSharedItem?.sharedBy.length} people</p>
+              <p className="text-sm text-indigo-100 mt-1">{mostSharedItem?.sharedBy.length} people</p>
             </div>
             <div className="text-4xl opacity-80">🎯</div>
           </div>

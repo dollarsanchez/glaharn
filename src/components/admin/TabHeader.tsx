@@ -28,7 +28,7 @@ export default function TabHeader({
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             {title}
             {count !== undefined && (
-              <span className="text-sm font-semibold px-3 py-1 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 border border-emerald-200">
+              <span className="text-sm font-semibold px-3 py-1 rounded-full bg-gradient-to-r from-violet-100 to-purple-100 text-violet-700 border border-violet-200">
                 {count}
               </span>
             )}
@@ -43,7 +43,7 @@ export default function TabHeader({
       {onAdd && (
         <Button
           onClick={onAdd}
-          className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+          className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
         >
           <span className="text-xl mr-2">+</span>
           {addLabel}
