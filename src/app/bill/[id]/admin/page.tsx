@@ -8,6 +8,23 @@ import Card from '@/components/ui/Card';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
+import ProgressBar from '@/components/ui/ProgressBar';
+import Sidebar from '@/components/admin/Sidebar';
+import FAB from '@/components/admin/FAB';
+import Analytics from '@/components/admin/Analytics';
+import CollectionDashboard from '@/components/admin/CollectionDashboard';
+import ActivityLog from '@/components/admin/ActivityLog';
+import CommandPalette from '@/components/admin/CommandPalette';
+import PaymentTimeline from '@/components/admin/PaymentTimeline';
+import BottomNav from '@/components/admin/BottomNav';
+import BillTemplates from '@/components/admin/BillTemplates';
+import BatchSlipUpload from '@/components/admin/BatchSlipUpload';
+import SwipeableCard from '@/components/admin/SwipeableCard';
+import MemberPaymentMethods from '@/components/admin/MemberPaymentMethods';
+import MemberPaymentSlips from '@/components/admin/MemberPaymentSlips';
+import TabHeader from '@/components/admin/TabHeader';
+import EmptyState from '@/components/admin/EmptyState';
+import CardActions from '@/components/admin/CardActions';
 import {
   calculateMemberSummaries,
   calculateTransactions,
@@ -31,11 +48,20 @@ export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authCode, setAuthCode] = useState('');
 
+  // UI State
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+
   // Modals state
   const [showAddMember, setShowAddMember] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [showShareLink, setShowShareLink] = useState(false);
+
+  // Multi-step wizard for Add Item
+  const [itemWizardStep, setItemWizardStep] = useState(1);
 
   // Form state
   const [memberName, setMemberName] = useState('');
@@ -65,12 +91,15 @@ export default function AdminDashboard() {
   const [optOutDeadlineDate, setOptOutDeadlineDate] = useState('');
   const [optOutDeadlineTime, setOptOutDeadlineTime] = useState('');
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'overview' | 'members' | 'items' | 'payments' | 'requests' | 'settings'>('overview');
-
-  // Search & Sort state
+  // Search state
   const [memberSearchQuery, setMemberSearchQuery] = useState('');
-  const [memberSortBy, setMemberSortBy] = useState<'name' | 'balance' | 'status'>('name');
+  const [itemSearchQuery, setItemSearchQuery] = useState('');
+  const [paymentSearchQuery, setPaymentSearchQuery] = useState('');
+
+  // Filter & Sort state
+  const [memberFilter, setMemberFilter] = useState<'all' | 'verified' | 'pending' | 'notpaid'>('all');
+  const [memberSort, setMemberSort] = useState<'name' | 'balance' | 'amount'>('name');
+  const [quickSplitMode, setQuickSplitMode] = useState<'custom' | 'equal' | 'common'>('custom');
 
   const bill = bills[billId];
 
@@ -87,7 +116,6 @@ export default function AdminDashboard() {
     }
   }, [adminCode, bill, isAuthenticated, showToast]);
 
-  // Show notification for pending requests
   useEffect(() => {
     if (isAuthenticated && bill) {
       const pendingPaymentRequests = bill.paymentMethodRequests.filter((r) => r.status === 'pending').length;
@@ -109,12 +137,13 @@ export default function AdminDashboard() {
 
   if (!bill) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <Card className="text-center max-w-md w-full shadow-lg">
-          <div className="text-6xl mb-4">😢</div>
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex items-center justify-center p-4">
+        <Card className="text-center max-w-md w-full shadow-xl">
+          <div className="text-6xl mb-4">📭</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             ไม่พบบิลนี้
           </h1>
+          <p className="text-gray-600 mb-6">บิลอาจถูกลบหรือไม่มีอยู่จริง</p>
           <Button onClick={() => router.push('/')}>กลับหน้าหลัก</Button>
         </Card>
       </div>
@@ -123,17 +152,17 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 flex items-center justify-center p-4">
         <Card className="max-w-md w-full shadow-2xl">
           <div className="text-center mb-8">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center text-white text-5xl shadow-xl shadow-indigo-500/50">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-5xl shadow-xl">
               🔐
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-3">
               Admin Access
             </h1>
-            <p className="text-gray-700 text-base font-medium">
-              กรุณากรอกรหัส Admin เพื่อเข้าถึงหน้านี้
+            <p className="text-gray-600 text-base">
+              กรุณากรอกรหัส Admin เพื่อเข้าถึงหน้าจัดการ
             </p>
           </div>
           <div className="space-y-4">
@@ -156,6 +185,7 @@ export default function AdminDashboard() {
               }}
               fullWidth
               size="lg"
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
             >
               เข้าสู่ระบบ
             </Button>
@@ -185,11 +215,9 @@ export default function AdminDashboard() {
   const handleAddMember = () => {
     if (memberName.trim()) {
       if (editingMemberId) {
-        // Update existing member
         updateMember(billId, editingMemberId, { name: memberName.trim() });
         setEditingMemberId(null);
       } else {
-        // Add new member
         const newMember: Member = {
           id: generateId(),
           name: memberName.trim(),
@@ -199,6 +227,7 @@ export default function AdminDashboard() {
       }
       setMemberName('');
       setShowAddMember(false);
+      showToast('เพิ่มสมาชิกสำเร็จ!', 'success');
     }
   };
 
@@ -209,7 +238,6 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteMember = async (member: Member) => {
-    // Check if member has any items or transactions
     const hasItems = bill.items.some(
       (item) => item.paidBy.includes(member.id) || item.sharedBy.includes(member.id)
     );
@@ -229,6 +257,7 @@ export default function AdminDashboard() {
     try {
       await removeMember(billId, member.id);
       showToast('ลบสมาชิกสำเร็จ!', 'success');
+      setSelectedMemberId(null);
     } catch (error) {
       showToast('เกิดข้อผิดพลาดในการลบสมาชิก', 'error');
     }
@@ -237,7 +266,6 @@ export default function AdminDashboard() {
   const handleAddItem = () => {
     if (itemName.trim() && itemPrice && selectedPayers.length > 0 && selectedShared.length > 0) {
       if (editingItemId) {
-        // Update existing item
         updateItem(billId, editingItemId, {
           name: itemName.trim(),
           price: parseFloat(itemPrice),
@@ -245,8 +273,8 @@ export default function AdminDashboard() {
           sharedBy: selectedShared,
         });
         setEditingItemId(null);
+        showToast('แก้ไขรายการสำเร็จ!', 'success');
       } else {
-        // Add new item
         const newItem: BillItem = {
           id: generateId(),
           name: itemName.trim(),
@@ -255,12 +283,14 @@ export default function AdminDashboard() {
           sharedBy: selectedShared,
         };
         addItem(billId, newItem);
+        showToast('เพิ่มรายการสำเร็จ!', 'success');
       }
       setItemName('');
       setItemPrice('');
       setSelectedPayers([]);
       setSelectedShared([]);
       setShowAddItem(false);
+      setItemWizardStep(1);
     }
   };
 
@@ -273,7 +303,6 @@ export default function AdminDashboard() {
     setShowAddItem(true);
   };
 
-  // Handle QR file change
   const handleQRFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -282,7 +311,6 @@ export default function AdminDashboard() {
       validateImageFile(file);
       setQrcodeFile(file);
 
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setQrcodePreview(reader.result as string);
@@ -315,7 +343,6 @@ export default function AdminDashboard() {
           ownerName: owner.name,
         };
       } else if (paymentType === 'qrcode' && qrcodeFile) {
-        // Upload QR Code to Supabase Storage
         const imageUrl = await uploadQRCode(qrcodeFile, billId);
         newMethod = {
           type: 'qrcode',
@@ -366,15 +393,12 @@ export default function AdminDashboard() {
     setter([]);
   };
 
-  // Handle request approval/rejection
   const handleApproveRequest = async (requestId: string) => {
     const request = bill.requests.find((r) => r.id === requestId);
     if (!request) return;
 
-    // Update the request status to approved
     await updateRequest(billId, requestId, { status: 'approved' });
 
-    // Remove the member from the item's sharedBy list
     const item = bill.items.find((i) => i.id === request.itemId);
     if (item) {
       const updatedSharedBy = item.sharedBy.filter((id) => id !== request.memberId);
@@ -389,7 +413,6 @@ export default function AdminDashboard() {
     showToast('ปฏิเสธคำขอแล้ว', 'info');
   };
 
-  // Handle comment reply
   const handleReplyToComment = async (commentId: string) => {
     if (!commentReply.trim()) return;
     await updateComment(billId, commentId, commentReply.trim());
@@ -398,13 +421,11 @@ export default function AdminDashboard() {
     showToast('ตอบกลับความคิดเห็นแล้ว!', 'success');
   };
 
-  // Handle payment method request approval
   const handleApprovePaymentRequest = async (requestId: string) => {
     const request = bill.paymentMethodRequests.find((r) => r.id === requestId);
     if (!request) return;
 
     try {
-      // อนุมัติคำขอโดยเพิ่ม payment method เข้าไปจริง
       await updatePaymentMethodRequest(billId, requestId, { status: 'approved' });
       await addPaymentMethod(billId, request.paymentMethod);
       showToast('อนุมัติคำขอแล้ว! เพิ่มช่องทางรับเงินเรียบร้อย', 'success');
@@ -414,7 +435,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Handle payment method request rejection
   const handleRejectPaymentRequest = async (requestId: string) => {
     await updatePaymentMethodRequest(billId, requestId, {
       status: 'rejected',
@@ -423,7 +443,6 @@ export default function AdminDashboard() {
     showToast('ปฏิเสธคำขอแล้ว', 'info');
   };
 
-  // Handle opt-out deadline
   const handleSetOptOutDeadline = async () => {
     if (!optOutDeadlineDate || !optOutDeadlineTime) {
       showToast('กรุณาเลือกวันที่และเวลา', 'error');
@@ -450,7 +469,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Handle delete bill
   const handleDeleteBill = async () => {
     const confirmed = confirm(
       `⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบบิล "${bill.name}"?\n\nการลบบิลจะไม่สามารถกู้คืนได้!`
@@ -473,78 +491,185 @@ export default function AdminDashboard() {
   const pendingRequestsCount = bill.requests.filter((r) => r.status === 'pending').length;
   const pendingPaymentRequestsCount = bill.paymentMethodRequests.filter((r) => r.status === 'pending').length;
   const unreadCommentsCount = bill.comments.filter((c) => !c.adminReply).length;
+  const totalPendingCount = pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount;
 
-  // Filter and Sort Members
-  const getFilteredAndSortedMembers = () => {
-    let filtered = [...bill.members];
-
+  // Filter data with advanced filtering and sorting
+  let filteredMembers = bill.members.filter((member) => {
     // Search filter
-    if (memberSearchQuery.trim()) {
-      const query = memberSearchQuery.toLowerCase().trim();
-      filtered = filtered.filter((member) =>
-        member.name.toLowerCase().includes(query)
-      );
+    const matchesSearch = member.name.toLowerCase().includes(memberSearchQuery.toLowerCase());
+
+    // Status filter
+    let matchesFilter = true;
+    if (memberFilter === 'verified') {
+      matchesFilter = member.paymentVerified === true;
+    } else if (memberFilter === 'pending') {
+      matchesFilter = member.paymentSlipUrl !== undefined && !member.paymentVerified;
+    } else if (memberFilter === 'notpaid') {
+      matchesFilter = !member.paymentSlipUrl;
     }
 
-    // Sort
-    filtered.sort((a, b) => {
-      if (memberSortBy === 'name') {
-        return a.name.localeCompare(b.name, 'th');
-      } else if (memberSortBy === 'balance') {
-        const summaryA = summaries.find((s) => s.memberId === a.id);
-        const summaryB = summaries.find((s) => s.memberId === b.id);
-        const balanceA = summaryA?.balance || 0;
-        const balanceB = summaryB?.balance || 0;
-        return balanceB - balanceA; // มาก -> น้อย
-      } else if (memberSortBy === 'status') {
-        // Priority: verified > has slip > no slip
-        const getStatusPriority = (member: typeof a) => {
-          if (member.paymentVerified) return 3;
-          if (member.paymentSlipUrl) return 2;
-          return 1;
-        };
-        return getStatusPriority(b) - getStatusPriority(a);
-      }
-      return 0;
-    });
+    return matchesSearch && matchesFilter;
+  });
 
-    return filtered;
-  };
+  // Sort members
+  filteredMembers = [...filteredMembers].sort((a, b) => {
+    const summaryA = summaries.find(s => s.memberId === a.id);
+    const summaryB = summaries.find(s => s.memberId === b.id);
 
-  const filteredMembers = getFilteredAndSortedMembers();
+    if (memberSort === 'name') {
+      return a.name.localeCompare(b.name);
+    } else if (memberSort === 'balance') {
+      return (summaryB?.balance || 0) - (summaryA?.balance || 0);
+    } else if (memberSort === 'amount') {
+      return (summaryB?.totalPaid || 0) - (summaryA?.totalPaid || 0);
+    }
+    return 0;
+  });
 
-  // Tab configuration
-  const tabs = [
-    { id: 'overview' as const, label: 'ภาพรวม', icon: '📊' },
-    { id: 'members' as const, label: 'สมาชิก', icon: '👥', count: bill.members.length },
-    { id: 'items' as const, label: 'รายการอาหาร', icon: '🍽️', count: bill.items.length },
-    { id: 'payments' as const, label: 'ช่องทางรับเงิน', icon: '💳', count: bill.paymentMethods.length },
-    { id: 'requests' as const, label: 'คำขอ', icon: '💬', badge: pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount },
-    { id: 'settings' as const, label: 'ตั้งค่า', icon: '⚙️' },
+  const filteredItems = bill.items.filter((item) =>
+    item.name.toLowerCase().includes(itemSearchQuery.toLowerCase())
+  );
+
+  const filteredPayments = bill.paymentMethods.filter((payment) =>
+    payment.ownerName.toLowerCase().includes(paymentSearchQuery.toLowerCase())
+  );
+
+  // Selected member detail
+  const selectedMember = bill.members.find((m) => m.id === selectedMemberId);
+  const selectedMemberSummary = summaries.find((s) => s.memberId === selectedMemberId);
+
+  // Selected item detail
+  const selectedItem = bill.items.find((i) => i.id === selectedItemId);
+
+  // FAB Actions
+  const fabActions = [
+    {
+      id: 'add-member',
+      label: 'Add Member',
+      icon: '👤',
+      onClick: () => setShowAddMember(true),
+    },
+    {
+      id: 'add-item',
+      label: 'Add Item',
+      icon: '🍽️',
+      onClick: () => setShowAddItem(true),
+    },
+    {
+      id: 'add-payment',
+      label: 'Add Payment',
+      icon: '💳',
+      onClick: () => setShowAddPayment(true),
+    },
+    {
+      id: 'share',
+      label: 'Share Link',
+      icon: '📤',
+      onClick: () => setShowShareLink(true),
+    },
+  ];
+
+  // Command Palette Commands
+  const commands = [
+    {
+      id: 'goto-dashboard',
+      label: 'Go to Dashboard',
+      icon: '🏠',
+      action: () => setActiveTab('dashboard'),
+      keywords: ['home', 'overview'],
+    },
+    {
+      id: 'goto-members',
+      label: 'Go to Members',
+      icon: '👥',
+      action: () => setActiveTab('members'),
+      keywords: ['people', 'users'],
+    },
+    {
+      id: 'goto-items',
+      label: 'Go to Items',
+      icon: '🍽️',
+      action: () => setActiveTab('items'),
+      keywords: ['dishes', 'food'],
+    },
+    {
+      id: 'goto-payments',
+      label: 'Go to Payments',
+      icon: '💳',
+      action: () => setActiveTab('payments'),
+      keywords: ['money', 'bank'],
+    },
+    {
+      id: 'goto-requests',
+      label: 'Go to Requests',
+      icon: '💬',
+      action: () => setActiveTab('requests'),
+      keywords: ['pending', 'inbox'],
+    },
+    {
+      id: 'goto-settings',
+      label: 'Go to Settings',
+      icon: '⚙️',
+      action: () => setActiveTab('settings'),
+      keywords: ['config', 'preferences'],
+    },
+    {
+      id: 'add-member',
+      label: 'Add Member',
+      icon: '👤',
+      action: () => setShowAddMember(true),
+      keywords: ['new', 'person', 'user'],
+    },
+    {
+      id: 'add-item',
+      label: 'Add Item',
+      icon: '🍽️',
+      action: () => setShowAddItem(true),
+      keywords: ['new', 'dish', 'food'],
+    },
+    {
+      id: 'add-payment',
+      label: 'Add Payment Method',
+      icon: '💳',
+      action: () => setShowAddPayment(true),
+      keywords: ['new', 'bank', 'promptpay'],
+    },
+    {
+      id: 'share',
+      label: 'Share Link',
+      icon: '📤',
+      action: () => setShowShareLink(true),
+      keywords: ['copy', 'send'],
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pb-8">
-      {/* Header - Sticky */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Top Header */}
-          <div className="py-4 sm:py-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="px-3 py-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center gap-2 text-white text-sm font-semibold">
-                    <span>👑</span>
-                    <span>Admin</span>
-                  </div>
-                  <div className="px-3 py-1 bg-gray-100 rounded-full font-mono font-bold text-sm text-gray-700">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex">
+      {/* Sidebar */}
+      <Sidebar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        pendingCount={totalPendingCount}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+      />
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
+        {/* Header */}
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">
+                    {bill.name}
+                  </h1>
+                  <div className="px-2 py-1 bg-emerald-100 rounded-full text-xs font-mono font-bold text-emerald-700">
                     {bill.adminId}
                   </div>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  {bill.name}
-                </h1>
-                <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
+                <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
                   {bill.location && (
                     <span className="flex items-center gap-1">
                       <span>📍</span>
@@ -559,1301 +684,1427 @@ export default function AdminDashboard() {
                   )}
                   <span className="flex items-center gap-1">
                     <span>💰</span>
-                    <span className="font-bold text-indigo-600">{formatCurrency(totalAmount)}</span>
+                    <span className="font-bold text-emerald-600">{formatCurrency(totalAmount)}</span>
                   </span>
                 </div>
               </div>
-              <Button
-                onClick={() => setShowShareLink(true)}
-                size="sm"
-                className="whitespace-nowrap"
-              >
-                📤 แชร์ลิงก์
-              </Button>
-            </div>
-          </div>
 
-          {/* Tab Navigation */}
-          <div className="flex overflow-x-auto scrollbar-hide -mb-px">
-            <div className="flex gap-1 sm:gap-2 min-w-full sm:min-w-0">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    relative flex items-center gap-2 px-3 sm:px-4 py-3 text-sm font-semibold whitespace-nowrap
-                    border-b-2 transition-all
-                    ${activeTab === tab.id
-                      ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                    }
-                  `}
-                >
-                  <span className="text-base sm:text-lg">{tab.icon}</span>
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  {tab.count !== undefined && (
-                    <span className={`
-                      px-2 py-0.5 rounded-full text-xs font-bold
-                      ${activeTab === tab.id ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'}
-                    `}>
-                      {tab.count}
-                    </span>
-                  )}
-                  {tab.badge !== undefined && tab.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="mb-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <span>⚡</span>
-                <span>การดำเนินการด่วน</span>
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                <button
-                  onClick={() => setShowAddItem(true)}
-                  className="group p-4 bg-gradient-to-br from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
-                >
-                  <div className="text-center text-white">
-                    <div className="text-3xl mb-2">🍽️</div>
-                    <div className="font-bold text-sm">เพิ่มเมนู</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setShowAddMember(true)}
-                  className="group p-4 bg-gradient-to-br from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
-                >
-                  <div className="text-center text-white">
-                    <div className="text-3xl mb-2">👤</div>
-                    <div className="font-bold text-sm">เพิ่มสมาชิก</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setShowAddPayment(true)}
-                  className="group p-4 bg-gradient-to-br from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
-                >
-                  <div className="text-center text-white">
-                    <div className="text-3xl mb-2">💳</div>
-                    <div className="font-bold text-sm">เพิ่มช่องทาง</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('settings')}
-                  className="group p-4 bg-gradient-to-br from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
-                >
-                  <div className="text-center text-white">
-                    <div className="text-3xl mb-2">⏰</div>
-                    <div className="font-bold text-sm">ตั้งเวลา</div>
-                  </div>
-                </button>
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowShareLink(true)}
-                  className="group p-4 bg-gradient-to-br from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Share"
                 >
-                  <div className="text-center text-white">
-                    <div className="text-3xl mb-2">📤</div>
-                    <div className="font-bold text-sm">แชร์ลิงก์</div>
-                  </div>
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
                 </button>
+
+                {totalPendingCount > 0 && (
+                  <button
+                    onClick={() => setActiveTab('requests')}
+                    className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Notifications"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {totalPendingCount}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
+          </div>
+        </header>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg">
-                <p className="text-sm text-indigo-100 mb-1">ยอดรวมทั้งหมด</p>
-                <p className="text-3xl font-bold">{formatCurrency(totalAmount)}</p>
-              </Card>
-              <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-lg">
-                <p className="text-sm text-emerald-100 mb-1">สมาชิก</p>
-                <p className="text-3xl font-bold">{bill.members.length}</p>
-              </Card>
-              <Card className="bg-gradient-to-br from-amber-500 to-orange-600 text-white border-none shadow-lg">
-                <p className="text-sm text-amber-100 mb-1">รายการอาหาร</p>
-                <p className="text-3xl font-bold">{bill.items.length}</p>
-              </Card>
-              <Card className="bg-gradient-to-br from-rose-500 to-pink-600 text-white border-none shadow-lg">
-                <p className="text-sm text-rose-100 mb-1">ช่องทางรับเงิน</p>
-                <p className="text-3xl font-bold">{bill.paymentMethods.length}</p>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Summary */}
-              <Card className="shadow-lg">
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    📊 สรุปยอด
-                  </h2>
-                  <p className="text-gray-600">ยอดสุทธิของแต่ละคน</p>
-                </div>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {summaries.map((summary) => (
-                    <div
-                      key={summary.memberId}
-                      className="p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 shadow-sm"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-8 h-8 rounded-full shadow-sm"
-                            style={{
-                              backgroundColor: bill.members.find((m) => m.id === summary.memberId)?.color,
-                            }}
-                          />
-                          <span className="font-bold text-gray-900">
-                            {summary.memberName}
-                          </span>
-                        </div>
-                        <span
-                          className={`font-bold text-lg ${
-                            summary.balance >= 0
-                              ? 'text-emerald-600'
-                              : 'text-red-600'
-                          }`}
-                        >
-                          {summary.balance >= 0 ? '+' : ''}{formatCurrency(Math.abs(summary.balance))}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-600 space-y-1 pl-10">
-                        <p>หาร: {formatCurrency(summary.totalShared)}</p>
-                        <p>จ่าย: {formatCurrency(summary.totalPaid)}</p>
-                      </div>
+        {/* Content Area */}
+        <div className="p-6 pb-24 lg:pb-6">
+          {/* Dashboard Tab */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-emerald-100 text-sm font-medium">Total Amount</p>
+                      <p className="text-3xl font-bold mt-1">{formatCurrency(totalAmount)}</p>
                     </div>
-                  ))}
+                    <div className="text-5xl opacity-80">💰</div>
+                  </div>
+                </Card>
+
+                <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer" onClick={() => setActiveTab('members')}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm font-medium">Members</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">{bill.members.length}</p>
+                    </div>
+                    <div className="text-5xl">👥</div>
+                  </div>
+                </Card>
+
+                <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer" onClick={() => setActiveTab('items')}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm font-medium">Items</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">{bill.items.length}</p>
+                    </div>
+                    <div className="text-5xl">🍽️</div>
+                  </div>
+                </Card>
+
+                <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow cursor-pointer" onClick={() => setActiveTab('requests')}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 text-sm font-medium">Pending</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-1">{totalPendingCount}</p>
+                    </div>
+                    <div className="text-5xl">💬</div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Analytics Charts */}
+              <Analytics bill={bill} summaries={summaries} />
+
+              {/* Two Column Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Collection Dashboard */}
+                <CollectionDashboard bill={bill} summaries={summaries} />
+
+                {/* Activity Log */}
+                <ActivityLog bill={bill} />
+              </div>
+
+              {/* Members Summary Table */}
+              <Card className="shadow-lg">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Members Summary</h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Member</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Paid</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Balance</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {summaries.map((summary) => {
+                        const member = bill.members.find((m) => m.id === summary.memberId);
+                        if (!member) return null;
+                        return (
+                          <tr key={summary.memberId} className="hover:bg-gray-50 cursor-pointer" onClick={() => {
+                            setSelectedMemberId(member.id);
+                            setActiveTab('members');
+                          }}>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: member.color }}
+                                />
+                                <span className="font-medium text-gray-900">{member.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-right text-gray-900 font-medium">
+                              {formatCurrency(summary.totalPaid)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className={`font-bold ${summary.balance > 0 ? 'text-emerald-600' : summary.balance < 0 ? 'text-rose-600' : 'text-gray-500'}`}>
+                                {formatCurrency(Math.abs(summary.balance))}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {member.paymentVerified ? (
+                                <Badge variant="success">Verified</Badge>
+                              ) : member.paymentSlipUrl ? (
+                                <Badge variant="warning">Pending</Badge>
+                              ) : (
+                                <Badge variant="default">Not Paid</Badge>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </Card>
 
               {/* Transactions */}
-              <Card className="shadow-lg">
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    💸 รายการโอนเงิน
-                  </h2>
-                  <p className="text-gray-600">ใครควรจ่ายให้ใคร</p>
-                </div>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {transactions.map((transaction, index) => (
-                    <div
-                      key={index}
-                      className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm"
-                    >
-                      <p className="text-sm text-gray-600 mb-1">
-                        {transaction.fromName} → {transaction.toName}
-                      </p>
-                      <p className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        {formatCurrency(transaction.amount)}
-                      </p>
-                    </div>
-                  ))}
-                  {transactions.length === 0 && (
-                    <div className="text-center py-4">
-                      <p className="text-gray-400">ไม่มีรายการโอนเงิน</p>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-
-            {/* Latest Activities */}
-            <Card className="shadow-lg">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <span>🔔</span>
-                  <span>กิจกรรมล่าสุด</span>
-                </h2>
-                <p className="text-gray-600">กิจกรรมและการอัปเดตล่าสุด</p>
-              </div>
-              <div className="space-y-3">
-                {/* Payment Verified Members */}
-                {bill.members.filter(m => m.paymentVerified).slice(0, 3).map(member => (
-                  <div key={member.id} className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-sm" style={{ backgroundColor: member.color }}>
-                      {member.name.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{member.name}</p>
-                      <p className="text-sm text-emerald-700">✓ ยืนยันการชำระเงินแล้ว</p>
-                    </div>
-                    <Badge variant="success" size="sm">ชำระแล้ว</Badge>
-                  </div>
-                ))}
-
-                {/* Members with Payment Slips */}
-                {bill.members.filter(m => m.paymentSlipUrl && !m.paymentVerified).slice(0, 2).map(member => (
-                  <div key={member.id} className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-sm" style={{ backgroundColor: member.color }}>
-                      {member.name.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">{member.name}</p>
-                      <p className="text-sm text-amber-700">อัปโหลดสลิปแล้ว - รอการตรวจสอบ</p>
-                    </div>
-                    <Badge variant="warning" size="sm">รอตรวจสอบ</Badge>
-                  </div>
-                ))}
-
-                {/* Pending Requests */}
-                {(pendingRequestsCount + pendingPaymentRequestsCount > 0) && (
-                  <div className="flex items-center gap-3 p-3 bg-indigo-50 rounded-xl border border-indigo-200 cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => setActiveTab('requests')}>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-500 text-white font-bold shadow-sm">
-                      {pendingRequestsCount + pendingPaymentRequestsCount}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">คำขอรออนุมัติ</p>
-                      <p className="text-sm text-indigo-700">
-                        {pendingRequestsCount > 0 && `${pendingRequestsCount} คำขอไม่หาร`}
-                        {pendingRequestsCount > 0 && pendingPaymentRequestsCount > 0 && ', '}
-                        {pendingPaymentRequestsCount > 0 && `${pendingPaymentRequestsCount} คำขอช่องทางรับเงิน`}
-                      </p>
-                    </div>
-                    <span className="text-indigo-600">→</span>
-                  </div>
-                )}
-
-                {/* No Activities */}
-                {bill.members.filter(m => m.paymentVerified || m.paymentSlipUrl).length === 0 &&
-                 (pendingRequestsCount + pendingPaymentRequestsCount === 0) && (
-                  <div className="text-center py-8">
-                    <div className="text-5xl mb-3">📭</div>
-                    <p className="text-gray-500">ยังไม่มีกิจกรรม</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
-          <div className="space-y-6">
-            {/* Opt-Out Deadline Settings */}
-            <Card className="shadow-lg border-2 border-indigo-200 bg-indigo-50">
-              <div className="mb-4">
-                <h2 className="text-2xl font-bold text-indigo-900">
-                  ⏰ กำหนดเวลาปิดรับคำขอไม่หาร
-                </h2>
-                <p className="text-indigo-700">ตั้งเวลาสิ้นสุดที่ member สามารถกดไม่หารเมนูได้</p>
-              </div>
-              <div className="bg-white p-4 rounded-xl border border-indigo-300">
-                {(() => {
-                  const deadline = bill.optOutDeadline ? new Date(bill.optOutDeadline) : null;
-                  const now = new Date();
-                  const isActive = deadline && deadline > now;
-                  const hasDeadline = !!bill.optOutDeadline;
-
-                  if (hasDeadline && isActive) {
-                    return (
-                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">✅</span>
-                          <span className="font-bold text-green-900">เปิดรับคำขอไม่หาร</span>
-                        </div>
-                        <p className="text-sm text-green-700">
-                          ปิดรับคำขอเมื่อ: {deadline!.toLocaleString('th-TH', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                          })}
-                        </p>
-                      </div>
-                    );
-                  } else if (hasDeadline && !isActive) {
-                    return (
-                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">🚫</span>
-                          <span className="font-bold text-red-900">ปิดรับคำขอไม่หารแล้ว</span>
-                        </div>
-                        <p className="text-sm text-red-700">
-                          หมดเวลาเมื่อ: {deadline!.toLocaleString('th-TH', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                          })}
-                        </p>
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">⚪</span>
-                          <span className="font-bold text-gray-700">ไม่จำกัดเวลา</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Member สามารถกดไม่หารได้ตลอดเวลา</p>
-                      </div>
-                    );
-                  }
-                })()}
-
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        วันที่
-                      </label>
-                      <Input
-                        type="date"
-                        value={optOutDeadlineDate}
-                        onChange={(e) => setOptOutDeadlineDate(e.target.value)}
-                        className="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        เวลา
-                      </label>
-                      <Input
-                        type="time"
-                        value={optOutDeadlineTime}
-                        onChange={(e) => setOptOutDeadlineTime(e.target.value)}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSetOptOutDeadline}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                      size="sm"
-                    >
-                      ⏰ ตั้งเวลา
-                    </Button>
-                    {bill.optOutDeadline && (
-                      <Button
-                        onClick={handleClearOptOutDeadline}
-                        variant="secondary"
-                        size="sm"
-                      >
-                        🗑️ ยกเลิกการจำกัดเวลา
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Payment Slips */}
-            <Card className="shadow-lg">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  💳 สลิปการโอนเงิน
-                </h2>
-                <p className="text-gray-600">สมาชิกที่แนบสลิปการโอนเงินแล้ว</p>
-              </div>
-              <div className="space-y-4">
-                {bill.members.filter(m => m.paymentSlipUrl).length > 0 ? (
-                  bill.members
-                    .filter(m => m.paymentSlipUrl)
-                    .map((member) => {
-                      const memberSummary = summaries.find((s) => s.memberId === member.id);
+              {transactions.length > 0 && (
+                <Card className="shadow-lg">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Transactions Timeline</h2>
+                  <div className="space-y-3">
+                    {transactions.map((tx, index) => {
+                      const fromMember = bill.members.find((m) => m.id === tx.from);
+                      const toMember = bill.members.find((m) => m.id === tx.to);
+                      if (!fromMember || !toMember) return null;
                       return (
                         <div
-                          key={member.id}
-                          className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200 shadow-sm"
+                          key={index}
+                          className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-emerald-50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow"
                         >
-                          <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0">
+                          <div className="flex-1 flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md"
+                              style={{ backgroundColor: fromMember.color }}
+                            >
+                              {fromMember.name.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{fromMember.name}</p>
+                              <p className="text-sm text-gray-500">Must transfer</p>
+                            </div>
+                          </div>
+                          <div className="text-2xl text-emerald-600 font-bold">→</div>
+                          <div className="flex-1 flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md"
+                              style={{ backgroundColor: toMember.color }}
+                            >
+                              {toMember.name.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{toMember.name}</p>
+                              <p className="text-sm text-gray-500">Receives</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-emerald-600">{formatCurrency(tx.amount)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Members Tab - Split View */}
+          {activeTab === 'members' && (
+            <div className="space-y-6">
+              <TabHeader
+                icon="👥"
+                title="Members"
+                count={bill.members.length}
+                description={`Manage participants in ${bill.name}`}
+                addLabel="Add Member"
+                onAdd={() => setShowAddMember(true)}
+              />
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
+              {/* List */}
+              <div className="lg:col-span-1 flex flex-col gap-4">
+                <Card className="shadow-lg space-y-3">
+                  <Input
+                    placeholder="🔍 Search members..."
+                    value={memberSearchQuery}
+                    onChange={(e) => setMemberSearchQuery(e.target.value)}
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Filter by</label>
+                      <select
+                        value={memberFilter}
+                        onChange={(e) => setMemberFilter(e.target.value as any)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      >
+                        <option value="all">All</option>
+                        <option value="verified">Verified</option>
+                        <option value="pending">Pending</option>
+                        <option value="notpaid">Not Paid</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Sort by</label>
+                      <select
+                        value={memberSort}
+                        onChange={(e) => setMemberSort(e.target.value as any)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      >
+                        <option value="name">Name</option>
+                        <option value="balance">Balance</option>
+                        <option value="amount">Amount</option>
+                      </select>
+                    </div>
+                  </div>
+                </Card>
+
+                <div className="flex-1 overflow-y-auto space-y-2">
+                  {filteredMembers.length === 0 ? (
+                    <EmptyState
+                      icon="👥"
+                      title="No members yet"
+                      description="Add members to start splitting the bill"
+                      actionLabel="Add First Member"
+                      onAction={() => setShowAddMember(true)}
+                    />
+                  ) : (
+                    filteredMembers.map((member) => {
+                    const summary = summaries.find((s) => s.memberId === member.id);
+                    const isSelected = selectedMemberId === member.id;
+                    return (
+                      <SwipeableCard
+                        key={member.id}
+                        leftActions={[
+                          {
+                            id: 'edit',
+                            label: 'Edit',
+                            icon: '✏️',
+                            color: 'text-blue-700',
+                            bgColor: 'bg-blue-100',
+                            onClick: () => handleEditMember(member),
+                          },
+                        ]}
+                        rightActions={[
+                          {
+                            id: 'delete',
+                            label: 'Delete',
+                            icon: '🗑️',
+                            color: 'text-rose-700',
+                            bgColor: 'bg-rose-100',
+                            onClick: () => handleDeleteMember(member),
+                          },
+                        ]}
+                      >
+                        <Card
+                          className={`cursor-pointer transition-all group ${
+                            isSelected
+                              ? 'shadow-lg ring-2 ring-emerald-500 bg-emerald-50'
+                              : 'shadow hover:shadow-md'
+                          }`}
+                          onClick={() => setSelectedMemberId(member.id)}
+                        >
+                          <div className="relative">
+                            {/* Desktop actions - top right */}
+                            <div className="absolute top-0 right-0 z-10">
+                              <CardActions
+                                actions={[
+                                  {
+                                    icon: '✏️',
+                                    label: 'Edit',
+                                    onClick: () => handleEditMember(member),
+                                    variant: 'primary',
+                                  },
+                                  {
+                                    icon: '🗑️',
+                                    label: 'Delete',
+                                    onClick: () => handleDeleteMember(member),
+                                    variant: 'danger',
+                                  },
+                                ]}
+                              />
+                            </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3">
                               <div
-                                className="w-12 h-12 rounded-full shadow-sm flex items-center justify-center text-white font-bold"
+                                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-md"
                                 style={{ backgroundColor: member.color }}
                               >
                                 {member.name.charAt(0)}
                               </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 truncate">{member.name}</p>
+                                {summary && (
+                                  <p className="text-sm text-gray-600">
+                                    Paid: <span className="font-semibold text-emerald-600">
+                                      {formatCurrency(summary.totalPaid)}
+                                    </span>
+                                  </p>
+                                )}
+                              </div>
+                              {(() => {
+                                const hasVerifiedSlips = member.paymentSlips?.some(s => s.verified) || member.paymentVerified;
+                                const hasPendingSlips = member.paymentSlips?.some(s => !s.verified) || (member.paymentSlipUrl && !member.paymentVerified);
+                                if (hasVerifiedSlips) {
+                                  return <span className="text-emerald-500 text-xl">✓</span>;
+                                } else if (hasPendingSlips) {
+                                  return <span className="text-amber-500 text-xl">⚠️</span>;
+                                } else {
+                                  return <span className="text-gray-300 text-xl">○</span>;
+                                }
+                              })()}
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="font-bold text-gray-900">{member.name}</span>
-                                <Badge variant="success" size="sm">โอนแล้ว</Badge>
-                              </div>
-                              {memberSummary && memberSummary.balance < 0 && (
-                                <p className="text-sm text-gray-700 mb-3">
-                                  ยอดที่ต้องโอน: <span className="font-bold text-red-600">
-                                    {formatCurrency(Math.abs(memberSummary.balance))}
-                                  </span>
-                                </p>
+                            {summary && (() => {
+                              const hasVerifiedSlips = member.paymentSlips?.some(s => s.verified) || member.paymentVerified;
+                              const hasPendingSlips = member.paymentSlips?.some(s => !s.verified) || (member.paymentSlipUrl && !member.paymentVerified);
+                              return (
+                                <ProgressBar
+                                  value={summary.totalPaid}
+                                  max={summary.totalShared}
+                                  color={hasVerifiedSlips ? 'emerald' : hasPendingSlips ? 'amber' : 'rose'}
+                                  showPercentage={false}
+                                />
+                              );
+                            })()}
+                          </div>
+                          </div>
+                        </Card>
+                      </SwipeableCard>
+                    );
+                  }))}
+                </div>
+              </div>
+
+              {/* Detail Panel */}
+              <div className="lg:col-span-2">
+                {selectedMember && selectedMemberSummary ? (
+                  <Card className="shadow-lg h-full overflow-y-auto">
+                    <div className="space-y-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className="w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-3xl shadow-lg"
+                            style={{ backgroundColor: selectedMember.color }}
+                          >
+                            {selectedMember.name.charAt(0)}
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-900">{selectedMember.name}</h2>
+                            <div className="mt-2">
+                              {selectedMember.paymentVerified ? (
+                                <Badge variant="success">✓ Verified</Badge>
+                              ) : selectedMember.paymentSlipUrl ? (
+                                <Badge variant="warning">Pending Verification</Badge>
+                              ) : (
+                                <Badge variant="default">Not Paid</Badge>
                               )}
-                              <div className="flex gap-2">
-                                <a
-                                  href={member.paymentSlipUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-block"
-                                >
-                                  <img
-                                    src={member.paymentSlipUrl}
-                                    alt={`${member.name}'s payment slip`}
-                                    className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-lg border border-emerald-300 hover:scale-105 transition-transform cursor-pointer"
-                                  />
-                                </a>
-                              </div>
-                              <a
-                                href={member.paymentSlipUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-block mt-2 text-emerald-600 hover:text-emerald-700 font-medium text-sm hover:underline"
-                              >
-                                📷 ดูขนาดเต็ม
-                              </a>
                             </div>
                           </div>
                         </div>
-                      );
-                    })
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleEditMember(selectedMember)}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteMember(selectedMember)}
+                            variant="secondary"
+                            size="sm"
+                            className="text-rose-600 hover:bg-rose-50"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
+                          <p className="text-sm text-emerald-700 font-medium">Total Paid</p>
+                          <p className="text-2xl font-bold text-emerald-900 mt-1">
+                            {formatCurrency(selectedMemberSummary.totalPaid)}
+                          </p>
+                        </div>
+
+                        <div className={`p-4 rounded-xl border ${
+                          selectedMemberSummary.balance < 0
+                            ? 'bg-gradient-to-br from-rose-50 to-pink-50 border-rose-200'
+                            : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
+                        }`}>
+                          <p className={`text-sm font-medium ${
+                            selectedMemberSummary.balance < 0 ? 'text-rose-700' : 'text-green-700'
+                          }`}>
+                            {selectedMemberSummary.balance < 0 ? 'Owes' : 'Gets Back'}
+                          </p>
+                          <p className={`text-2xl font-bold mt-1 ${
+                            selectedMemberSummary.balance < 0 ? 'text-rose-900' : 'text-green-900'
+                          }`}>
+                            {formatCurrency(Math.abs(selectedMemberSummary.balance))}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Payment Methods */}
+                      <MemberPaymentMethods
+                        member={selectedMember}
+                        billId={billId}
+                        billPaymentMethods={bill.paymentMethods}
+                        onAddPaymentMethod={async (method) => {
+                          await addPaymentMethod(billId, method);
+                          showToast('Payment method added!', 'success');
+                        }}
+                        onRemovePaymentMethod={async (index) => {
+                          await removePaymentMethod(billId, index);
+                          showToast('Payment method removed!', 'success');
+                        }}
+                      />
+
+                      {/* Payment Slips */}
+                      <MemberPaymentSlips
+                        member={selectedMember}
+                        onVerifySlip={async (slipIndex) => {
+                          const updatedSlips = [...(selectedMember.paymentSlips || [])];
+                          updatedSlips[slipIndex] = {
+                            ...updatedSlips[slipIndex],
+                            verified: true,
+                          };
+                          await updateMember(billId, selectedMember.id, { paymentSlips: updatedSlips });
+                          showToast('Payment slip verified!', 'success');
+                        }}
+                        onRejectSlip={async (slipIndex) => {
+                          if (confirm('Remove this payment slip?')) {
+                            const updatedSlips = [...(selectedMember.paymentSlips || [])];
+                            updatedSlips.splice(slipIndex, 1);
+                            await updateMember(billId, selectedMember.id, { paymentSlips: updatedSlips });
+                            showToast('Payment slip rejected!', 'info');
+                          }
+                        }}
+                      />
+
+                      {/* Items Involved */}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-3">Items Shared</h3>
+                        <div className="space-y-2">
+                          {bill.items
+                            .filter((item) => item.sharedBy.includes(selectedMember.id))
+                            .map((item) => (
+                              <div key={item.id} className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                                <span className="font-medium text-gray-900">{item.name}</span>
+                                <span className="text-emerald-600 font-semibold">{formatCurrency(item.price)}</span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Timeline for this member */}
+                    {(selectedMember.paymentSlipUrl || selectedMember.paymentVerified) && (
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <PaymentTimeline bill={{
+                          ...bill,
+                          members: bill.members.filter(m => m.id === selectedMember.id)
+                        }} />
+                      </div>
+                    )}
+                  </Card>
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-400 text-lg">ยังไม่มีสมาชิกแนบสลิป</p>
-                    <p className="text-gray-500 text-sm">สมาชิกสามารถแนบสลิปได้จากหน้า Member View</p>
-                  </div>
+                  <Card className="shadow-lg h-full flex items-center justify-center">
+                    <div className="text-center text-gray-400">
+                      <p className="text-6xl mb-4">👈</p>
+                      <p className="text-lg">Select a member to view details</p>
+                    </div>
+                  </Card>
                 )}
               </div>
-            </Card>
+            </div>
+            </div>
+          )}
 
-            {/* Danger Zone */}
-            <Card className="shadow-lg border-2 border-red-200 bg-red-50">
-              <div className="mb-4">
-                <h2 className="text-2xl font-bold text-red-900">
-                  ⚠️ โซนอันตราย
-                </h2>
-                <p className="text-red-700">การดำเนินการในส่วนนี้ไม่สามารถย้อนกลับได้</p>
+          {/* Items Tab - Split View */}
+          {activeTab === 'items' && (
+            <div className="space-y-6">
+              <TabHeader
+                icon="🍽️"
+                title="Items"
+                count={bill.items.length}
+                description="Manage bill items and split details"
+                addLabel="Add Item"
+                onAdd={() => setShowAddItem(true)}
+              />
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-280px)]">
+              {/* List */}
+              <div className="lg:col-span-1 flex flex-col gap-4">
+                <Card className="shadow-lg">
+                  <Input
+                    placeholder="🔍 Search items..."
+                    value={itemSearchQuery}
+                    onChange={(e) => setItemSearchQuery(e.target.value)}
+                  />
+                </Card>
+
+                <div className="flex-1 overflow-y-auto space-y-2">
+                  {filteredItems.length === 0 ? (
+                    <EmptyState
+                      icon="🍽️"
+                      title={itemSearchQuery ? "No items match your search" : "No items yet"}
+                      description={itemSearchQuery
+                        ? "Try a different search term"
+                        : "Add items to start calculating the bill"}
+                      actionLabel="Add First Item"
+                      onAction={() => setShowAddItem(true)}
+                    />
+                  ) : (
+                    filteredItems.map((item) => {
+                      const isSelected = selectedItemId === item.id;
+                      return (
+                        <SwipeableCard
+                          key={item.id}
+                          leftActions={[
+                            {
+                              id: 'edit',
+                              label: 'Edit',
+                              icon: '✏️',
+                              color: 'text-blue-700',
+                              bgColor: 'bg-blue-100',
+                              onClick: () => handleEditItem(item),
+                            },
+                          ]}
+                          rightActions={[
+                            {
+                              id: 'delete',
+                              label: 'Delete',
+                              icon: '🗑️',
+                              color: 'text-rose-700',
+                              bgColor: 'bg-rose-100',
+                              onClick: () => {
+                                if (confirm(`Delete "${item.name}"?`)) {
+                                  removeItem(billId, item.id);
+                                  setSelectedItemId(null);
+                                  showToast('Item deleted!', 'success');
+                                }
+                              },
+                            },
+                          ]}
+                        >
+                          <Card
+                            className={`cursor-pointer transition-all group ${
+                              isSelected
+                                ? 'shadow-lg ring-2 ring-emerald-500 bg-emerald-50'
+                                : 'shadow hover:shadow-md'
+                            }`}
+                            onClick={() => setSelectedItemId(item.id)}
+                          >
+                            <div className="relative">
+                              {/* Desktop actions - top right */}
+                              <div className="absolute top-0 right-0 z-10">
+                                <CardActions
+                                  actions={[
+                                    {
+                                      icon: '✏️',
+                                      label: 'Edit',
+                                      onClick: () => handleEditItem(item),
+                                      variant: 'primary',
+                                    },
+                                    {
+                                      icon: '🗑️',
+                                      label: 'Delete',
+                                      onClick: () => {
+                                        if (confirm(`Delete "${item.name}"?`)) {
+                                          removeItem(billId, item.id);
+                                          setSelectedItemId(null);
+                                          showToast('Item deleted!', 'success');
+                                        }
+                                      },
+                                      variant: 'danger',
+                                    },
+                                  ]}
+                                />
+                              </div>
+
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg flex items-center justify-center text-2xl">
+                                🍽️
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 truncate">{item.name}</p>
+                                <p className="text-sm text-emerald-600 font-semibold">
+                                  {formatCurrency(item.price)}
+                                </p>
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {item.sharedBy.length} sharing
+                              </div>
+                            </div>
+                            </div>
+                          </Card>
+                        </SwipeableCard>
+                      );
+                    })
+                  )}
+                </div>
               </div>
-              <div className="bg-white p-4 rounded-xl border border-red-300">
-                <h3 className="font-bold text-gray-900 mb-2">ลบบิล</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  ลบบิลนี้และข้อมูลทั้งหมดอย่างถาวร การกระทำนี้ไม่สามารถกู้คืนได้
+
+              {/* Detail Panel */}
+              <div className="lg:col-span-2">
+                {selectedItem ? (
+                  <Card className="shadow-lg h-full overflow-y-auto">
+                    <div className="space-y-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
+                            🍽️
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-900">{selectedItem.name}</h2>
+                            <p className="text-3xl font-bold text-emerald-600 mt-1">
+                              {formatCurrency(selectedItem.price)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleEditItem(selectedItem)}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              if (confirm(`Delete "${selectedItem.name}"?`)) {
+                                removeItem(billId, selectedItem.id);
+                                setSelectedItemId(null);
+                                showToast('Item deleted!', 'success');
+                              }
+                            }}
+                            variant="secondary"
+                            size="sm"
+                            className="text-rose-600 hover:bg-rose-50"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
+                          <p className="text-sm text-emerald-700 font-medium">Price per Person</p>
+                          <p className="text-2xl font-bold text-emerald-900 mt-1">
+                            {formatCurrency(selectedItem.price / selectedItem.sharedBy.length)}
+                          </p>
+                        </div>
+
+                        <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200">
+                          <p className="text-sm text-purple-700 font-medium">Total Sharers</p>
+                          <p className="text-2xl font-bold text-purple-900 mt-1">
+                            {selectedItem.sharedBy.length} {selectedItem.sharedBy.length === 1 ? 'person' : 'people'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Paid By */}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-3">Paid By</h3>
+                        <div className="space-y-2">
+                          {selectedItem.paidBy.map((memberId) => {
+                            const member = bill.members.find((m) => m.id === memberId);
+                            if (!member) return null;
+                            return (
+                              <div key={memberId} className="flex items-center gap-3 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg">
+                                <div
+                                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md"
+                                  style={{ backgroundColor: member.color }}
+                                >
+                                  {member.name.charAt(0)}
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-semibold text-gray-900">{member.name}</p>
+                                  <p className="text-sm text-gray-600">Paid {formatCurrency(selectedItem.price / selectedItem.paidBy.length)}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Shared By */}
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900 mb-3">Shared By</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          {selectedItem.sharedBy.map((memberId) => {
+                            const member = bill.members.find((m) => m.id === memberId);
+                            if (!member) return null;
+                            return (
+                              <div key={memberId} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                                <div
+                                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm"
+                                  style={{ backgroundColor: member.color }}
+                                >
+                                  {member.name.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900 text-sm truncate">{member.name}</p>
+                                  <p className="text-xs text-gray-600">{formatCurrency(selectedItem.price / selectedItem.sharedBy.length)}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ) : (
+                  <Card className="shadow-lg h-full flex items-center justify-center">
+                    <div className="text-center text-gray-400">
+                      <p className="text-6xl mb-4">👈</p>
+                      <p className="text-lg">Select an item to view details</p>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </div>
+            </div>
+          )}
+
+          {/* Payments Tab */}
+          {activeTab === 'payments' && (
+            <div className="space-y-6">
+              <TabHeader
+                icon="💳"
+                title="Payment Methods"
+                count={bill.paymentMethods.length}
+                description="Manage ways to receive payments"
+                addLabel="Add Payment Method"
+                onAdd={() => setShowAddPayment(true)}
+              />
+
+              {/* Batch Slip Upload */}
+              <BatchSlipUpload
+                members={bill.members}
+                billId={billId}
+                onUploadComplete={async (memberId, imageUrl) => {
+                  await updateMember(billId, memberId, { paymentSlipUrl: imageUrl });
+                  showToast('Payment slip uploaded!', 'success');
+                }}
+              />
+
+              <Card className="shadow-lg">
+                <Input
+                  placeholder="🔍 Search payment methods..."
+                  value={paymentSearchQuery}
+                  onChange={(e) => setPaymentSearchQuery(e.target.value)}
+                />
+              </Card>
+
+              {filteredPayments.length === 0 ? (
+                <EmptyState
+                  icon="💳"
+                  title={paymentSearchQuery ? "No payment methods match" : "No payment methods yet"}
+                  description={paymentSearchQuery
+                    ? "Try a different search term"
+                    : "Add payment methods so members can pay you"}
+                  actionLabel="Add Payment Method"
+                  onAction={() => setShowAddPayment(true)}
+                  secondaryLabel={paymentSearchQuery ? "Clear search" : undefined}
+                  onSecondary={paymentSearchQuery ? () => setPaymentSearchQuery('') : undefined}
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredPayments.map((payment, index) => (
+                    <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow group relative">
+                      {/* Desktop delete button - top right with hover reveal */}
+                      <div className="absolute top-3 right-3 z-10">
+                        <button
+                          onClick={() => {
+                            if (confirm('Delete this payment method?')) {
+                              removePaymentMethod(billId, index);
+                              showToast('Payment method deleted!', 'success');
+                            }
+                          }}
+                          className="p-2 rounded-lg bg-rose-100/90 hover:bg-rose-200 text-rose-700 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95"
+                          title="Delete payment method"
+                        >
+                          <span className="text-lg">🗑️</span>
+                        </button>
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-600">Owner</p>
+                        <p className="text-lg font-bold text-gray-900">{payment.ownerName}</p>
+                      </div>
+
+                      {payment.type === 'promptpay' && (
+                        <div className="bg-emerald-50 rounded-lg p-4">
+                          <p className="text-sm font-medium text-emerald-800 mb-1">PromptPay</p>
+                          <p className="text-lg font-mono font-bold text-emerald-900">{payment.phoneNumber}</p>
+                        </div>
+                      )}
+
+                      {payment.type === 'qrcode' && (
+                        <div className="bg-teal-50 rounded-lg p-4">
+                          <p className="text-sm font-medium text-teal-800 mb-2">QR Code</p>
+                          <img
+                            src={payment.imageUrl}
+                            alt="QR Code"
+                            className="w-full rounded-lg border-2 border-teal-200"
+                          />
+                        </div>
+                      )}
+
+                      {payment.type === 'bank' && (
+                        <div className="bg-cyan-50 rounded-lg p-4 space-y-2">
+                          <p className="text-sm font-medium text-cyan-800">Bank Account</p>
+                          <div>
+                            <p className="text-xs text-cyan-700">Bank</p>
+                            <p className="font-semibold text-cyan-900">{payment.bankName}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-cyan-700">Account Number</p>
+                            <p className="font-mono font-semibold text-cyan-900">{payment.accountNumber}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-cyan-700">Account Name</p>
+                            <p className="font-semibold text-cyan-900">{payment.accountName}</p>
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Requests Tab - Unified Inbox */}
+          {activeTab === 'requests' && (
+            <div className="space-y-6">
+              {/* Payment Method Requests */}
+              {bill.paymentMethodRequests.filter((r) => r.status === 'pending').length > 0 && (
+                <Card className="shadow-lg border-l-4 border-emerald-500">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">💳 Payment Method Requests</h2>
+                  <div className="space-y-3">
+                    {bill.paymentMethodRequests
+                      .filter((r) => r.status === 'pending')
+                      .map((request) => (
+                        <div key={request.id} className="p-4 bg-emerald-50 rounded-lg">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <p className="font-semibold text-gray-900">{request.paymentMethod.ownerName}</p>
+                              <p className="text-sm text-gray-600">
+                                {request.paymentMethod.type === 'promptpay' && 'PromptPay'}
+                                {request.paymentMethod.type === 'qrcode' && 'QR Code'}
+                                {request.paymentMethod.type === 'bank' && 'Bank Account'}
+                              </p>
+                            </div>
+                            <Badge variant="warning">Pending</Badge>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleApprovePaymentRequest(request.id)}
+                              size="sm"
+                              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              ✓ Approve
+                            </Button>
+                            <Button
+                              onClick={() => handleRejectPaymentRequest(request.id)}
+                              variant="secondary"
+                              size="sm"
+                              className="flex-1 text-rose-600 hover:bg-rose-50"
+                            >
+                              ✗ Reject
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </Card>
+              )}
+
+              {/* Item Opt-out Requests */}
+              {bill.requests.filter((r) => r.status === 'pending').length > 0 && (
+                <Card className="shadow-lg border-l-4 border-amber-500">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">🍽️ Opt-out Requests</h2>
+                  <div className="space-y-3">
+                    {bill.requests
+                      .filter((r) => r.status === 'pending')
+                      .map((request) => {
+                        const member = bill.members.find((m) => m.id === request.memberId);
+                        const item = bill.items.find((i) => i.id === request.itemId);
+                        if (!member || !item) return null;
+                        return (
+                          <div key={request.id} className="p-4 bg-amber-50 rounded-lg">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <p className="font-semibold text-gray-900">{member.name}</p>
+                                <p className="text-sm text-gray-600">Wants to opt out from: {item.name}</p>
+                                {request.reason && (
+                                  <p className="text-sm text-gray-500 mt-1">Reason: {request.reason}</p>
+                                )}
+                              </div>
+                              <Badge variant="warning">Pending</Badge>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => handleApproveRequest(request.id)}
+                                size="sm"
+                                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                              >
+                                ✓ Approve
+                              </Button>
+                              <Button
+                                onClick={() => handleRejectRequest(request.id)}
+                                variant="secondary"
+                                size="sm"
+                                className="flex-1 text-rose-600 hover:bg-rose-50"
+                              >
+                                ✗ Reject
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </Card>
+              )}
+
+              {/* Comments */}
+              {bill.comments.filter((c) => !c.adminReply).length > 0 && (
+                <Card className="shadow-lg border-l-4 border-cyan-500">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">💬 Comments</h2>
+                  <div className="space-y-4">
+                    {bill.comments
+                      .filter((c) => !c.adminReply)
+                      .map((comment) => {
+                        const member = bill.members.find((m) => m.id === comment.memberId);
+                        if (!member) return null;
+                        return (
+                          <div key={comment.id} className="p-4 bg-cyan-50 rounded-lg">
+                            <div className="flex items-start gap-3 mb-3">
+                              <div
+                                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                                style={{ backgroundColor: member.color }}
+                              >
+                                {member.name.charAt(0)}
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold text-gray-900">{member.name}</p>
+                                <p className="text-sm text-gray-600 mt-1">{comment.message}</p>
+                              </div>
+                            </div>
+                            {replyingToCommentId === comment.id ? (
+                              <div className="space-y-2">
+                                <Input
+                                  placeholder="Type your reply..."
+                                  value={commentReply}
+                                  onChange={(e) => setCommentReply(e.target.value)}
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => handleReplyToComment(comment.id)}
+                                    size="sm"
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                                  >
+                                    Send Reply
+                                  </Button>
+                                  <Button
+                                    onClick={() => {
+                                      setReplyingToCommentId(null);
+                                      setCommentReply('');
+                                    }}
+                                    variant="secondary"
+                                    size="sm"
+                                    className="flex-1"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <Button
+                                onClick={() => setReplyingToCommentId(comment.id)}
+                                variant="secondary"
+                                size="sm"
+                              >
+                                Reply
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </Card>
+              )}
+
+              {/* All Clear Message */}
+              {totalPendingCount === 0 && (
+                <Card className="text-center py-12 shadow-lg">
+                  <p className="text-6xl mb-4">✅</p>
+                  <p className="text-xl font-bold text-gray-900 mb-2">All Clear!</p>
+                  <p className="text-gray-600">No pending requests</p>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              {/* Bill Templates */}
+              <BillTemplates
+                bill={bill}
+                onApplyTemplate={(memberNames) => {
+                  // Add members from template if they don't exist
+                  memberNames.forEach((name) => {
+                    if (!bill.members.find(m => m.name === name)) {
+                      const newMember = {
+                        id: generateId(),
+                        name,
+                        color: getMemberColor(bill.members.length),
+                      };
+                      addMember(billId, newMember);
+                    }
+                  });
+                  showToast('Template applied successfully!', 'success');
+                }}
+              />
+
+              {/* Opt-out Deadline */}
+              <Card className="shadow-lg">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Opt-out Deadline</h2>
+                <p className="text-gray-600 mb-4">
+                  Set a deadline for opt-out requests
+                </p>
+                {bill.optOutDeadline && (
+                  <div className="mb-4 p-3 bg-teal-50 rounded-lg">
+                    <p className="text-sm text-teal-800">
+                      Deadline: {new Date(bill.optOutDeadline).toLocaleString('th-TH')}
+                    </p>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <Input
+                    label="Date"
+                    type="date"
+                    value={optOutDeadlineDate}
+                    onChange={(e) => setOptOutDeadlineDate(e.target.value)}
+                  />
+                  <Input
+                    label="Time"
+                    type="time"
+                    value={optOutDeadlineTime}
+                    onChange={(e) => setOptOutDeadlineTime(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSetOptOutDeadline}
+                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                  >
+                    Save
+                  </Button>
+                  {bill.optOutDeadline && (
+                    <Button onClick={handleClearOptOutDeadline} variant="secondary" className="flex-1">
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </Card>
+
+              {/* Danger Zone */}
+              <Card className="shadow-lg border-2 border-rose-200">
+                <h2 className="text-xl font-bold text-rose-600 mb-4">⚠️ Danger Zone</h2>
+                <p className="text-gray-600 mb-4">
+                  Deleting the bill cannot be undone
                 </p>
                 <Button
                   onClick={handleDeleteBill}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                  size="sm"
+                  variant="secondary"
+                  className="w-full sm:w-auto bg-rose-600 text-white hover:bg-rose-700"
                 >
-                  🗑️ ลบบิลนี้
+                  🗑️ Delete Bill
                 </Button>
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Members Tab */}
-        {activeTab === 'members' && (
-          <div className="space-y-6">
-            <Card className="shadow-lg">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    👥 สมาชิก ({bill.members.length})
-                  </h2>
-                  <p className="text-gray-600">จัดการสมาชิกในบิล</p>
-                </div>
-                <Button size="sm" onClick={() => setShowAddMember(true)}>
-                  + เพิ่มสมาชิก
-                </Button>
-              </div>
-
-              {/* Search & Sort Controls */}
-              <div className="mb-6 flex flex-col sm:flex-row gap-3">
-                {/* Search Bar */}
-                <div className="flex-1">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="ค้นหาสมาชิก..."
-                      value={memberSearchQuery}
-                      onChange={(e) => setMemberSearchQuery(e.target.value)}
-                      className="w-full px-4 py-2.5 pl-10 pr-10 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-900 text-gray-900 font-medium"
-                    />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
-                      🔍
-                    </span>
-                    {memberSearchQuery && (
-                      <button
-                        onClick={() => setMemberSearchQuery('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Sort Dropdown */}
-                <div className="sm:w-64">
-                  <select
-                    value={memberSortBy}
-                    onChange={(e) => setMemberSortBy(e.target.value as 'name' | 'balance' | 'status')}
-                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition-all cursor-pointer"
-                  >
-                    <option value="name">📝 เรียงตามชื่อ (A-Z)</option>
-                    <option value="balance">💰 เรียงตามยอดเงิน (มาก-น้อย)</option>
-                    <option value="status">✓ เรียงตามสถานะ</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {filteredMembers.length > 0 ? (
-                  filteredMembers.map((member) => {
-                    const memberSummary = summaries.find((s) => s.memberId === member.id);
-                    const hasSlip = !!member.paymentSlipUrl;
-                    const isVerified = member.paymentVerified;
-
-                    return (
-                    <div
-                      key={member.id}
-                      className={`group relative p-5 rounded-2xl border-2 shadow-md hover:shadow-xl transition-all ${
-                        isVerified
-                          ? 'bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-emerald-300'
-                          : hasSlip
-                          ? 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-blue-300'
-                          : 'bg-white border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-start gap-5">
-                        {/* Member Avatar & Info */}
-                        <div className="flex items-start gap-4 flex-1">
-                          <div className="relative flex-shrink-0">
-                            <div
-                              className="w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-white font-bold text-xl"
-                              style={{ backgroundColor: member.color }}
-                            >
-                              {member.name.charAt(0).toUpperCase()}
-                            </div>
-                            {isVerified && (
-                              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-md">
-                                <span className="text-white text-xs">✓</span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <h3 className="font-bold text-gray-900 text-xl">
-                                {member.name}
-                              </h3>
-                              {isVerified && (
-                                <Badge variant="success" size="sm">
-                                  ✓ ตรวจสอบแล้ว
-                                </Badge>
-                              )}
-                              {hasSlip && !isVerified && (
-                                <Badge variant="info" size="sm">
-                                  📎 มีสลิป
-                                </Badge>
-                              )}
-                            </div>
-
-                            {/* Balance Info */}
-                            {memberSummary && (
-                              <div className="space-y-1">
-                                <div className="flex items-baseline gap-2">
-                                  <span className="text-sm text-gray-600">ยอดสุทธิ:</span>
-                                  <span className={`text-lg font-bold ${
-                                    memberSummary.balance >= 0 ? 'text-emerald-600' : 'text-red-600'
-                                  }`}>
-                                    {memberSummary.balance >= 0 ? '+' : ''}
-                                    {formatCurrency(Math.abs(memberSummary.balance))}
-                                  </span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3 text-sm mt-2">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-gray-500">หาร:</span>
-                                    <span className="font-semibold text-gray-700">
-                                      {formatCurrency(memberSummary.totalShared)}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-gray-500">จ่าย:</span>
-                                    <span className="font-semibold text-gray-700">
-                                      {formatCurrency(memberSummary.totalPaid)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Payment Slip Preview */}
-                        {hasSlip && (
-                          <div className="flex-shrink-0">
-                            <a
-                              href={member.paymentSlipUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block group/slip"
-                            >
-                              <div className="relative">
-                                <img
-                                  src={member.paymentSlipUrl}
-                                  alt={`${member.name}'s payment slip`}
-                                  className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded-xl border-3 border-white shadow-lg group-hover/slip:scale-105 transition-transform"
-                                />
-                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover/slip:bg-opacity-10 rounded-xl transition-all flex items-center justify-center">
-                                  <span className="text-white opacity-0 group-hover/slip:opacity-100 font-bold text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">
-                                    ดูเต็ม
-                                  </span>
-                                </div>
-                              </div>
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div className="flex flex-col gap-2 flex-shrink-0">
-                          {hasSlip && (
-                            <button
-                              onClick={() => updateMember(billId, member.id, { paymentVerified: !isVerified })}
-                              className={`px-4 py-2 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md whitespace-nowrap ${
-                                isVerified
-                                  ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                  : 'bg-emerald-500 text-white hover:bg-emerald-600'
-                              }`}
-                            >
-                              {isVerified ? '✗ ยกเลิก' : '✓ ยืนยันการจ่าย'}
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleEditMember(member)}
-                            className="px-4 py-2 rounded-lg font-medium text-sm bg-white text-gray-700 hover:bg-gray-50 transition-all shadow-sm hover:shadow-md border border-gray-200"
-                          >
-                            ✏️ แก้ไข
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMember(member)}
-                            className="px-4 py-2 rounded-lg font-medium text-sm bg-red-50 text-red-600 hover:bg-red-100 transition-all shadow-sm hover:shadow-md border border-red-200"
-                          >
-                            🗑️ ลบ
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                  })
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="text-6xl mb-4">🔍</div>
-                    <p className="text-gray-400 text-lg font-medium">ไม่พบสมาชิก</p>
-                    <p className="text-gray-500 text-sm mt-1">
-                      {memberSearchQuery
-                        ? `ไม่พบสมาชิกที่ชื่อ "${memberSearchQuery}"`
-                        : 'ยังไม่มีสมาชิกในบิล'}
-                    </p>
-                    {memberSearchQuery && (
-                      <button
-                        onClick={() => setMemberSearchQuery('')}
-                        className="mt-4 px-4 py-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium hover:underline"
-                      >
-                        ล้างการค้นหา
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Items Tab */}
-        {activeTab === 'items' && (
-          <div className="space-y-6">
-            <Card className="shadow-lg">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    🍽️ รายการอาหาร ({bill.items.length})
-                  </h2>
-                  <p className="text-gray-600">จัดการรายการในบิล</p>
-                </div>
-                <Button size="sm" onClick={() => setShowAddItem(true)}>
-                  + เพิ่มรายการ
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {bill.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-4 bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 text-lg">{item.name}</h4>
-                        <p className="text-2xl bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent font-bold">
-                          {formatCurrency(item.price)}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEditItem(item)}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm('ยืนยันการลบรายการนี้?')) {
-                              removeItem(billId, item.id);
-                            }
-                          }}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p className="flex items-center gap-2">
-                        <span className="font-semibold">💳 จ่ายโดย:</span>
-                        <span>{item.paidBy.map((id) => bill.members.find((m) => m.id === id)?.name).join(', ')}</span>
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <span className="font-semibold">🍴 หารกัน:</span>
-                        <span>{item.sharedBy.map((id) => bill.members.find((m) => m.id === id)?.name).join(', ')}</span>
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {bill.items.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-400 text-lg">ยังไม่มีรายการ</p>
-                    <p className="text-gray-500 text-sm">คลิกปุ่ม "+ เพิ่ม" เพื่อเพิ่มรายการ</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Payments Tab */}
-        {activeTab === 'payments' && (
-          <div className="space-y-6">
-            <Card className="shadow-lg">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    💳 ช่องทางรับเงิน ({bill.paymentMethods.length})
-                  </h2>
-                  <p className="text-gray-600">จัดการช่องทางการชำระเงิน</p>
-                </div>
-                <Button size="sm" onClick={() => setShowAddPayment(true)}>
-                  + เพิ่มช่องทาง
-                </Button>
-              </div>
-              <div className="space-y-3">
-                {bill.paymentMethods.map((method, index) => (
-                  <div
-                    key={index}
-                    className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-all"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="default">{method.ownerName}</Badge>
-                          {method.type === 'promptpay' && <Badge variant="info">พร้อมเพย์</Badge>}
-                          {method.type === 'qrcode' && <Badge variant="success">QR Code</Badge>}
-                          {method.type === 'bank' && <Badge variant="warning">บัญชีธนาคาร</Badge>}
-                        </div>
-                        {method.type === 'promptpay' && (
-                          <p className="text-gray-900 font-mono">{method.phoneNumber}</p>
-                        )}
-                        {method.type === 'qrcode' && (
-                          <p className="text-gray-700 text-sm truncate">{method.imageUrl}</p>
-                        )}
-                        {method.type === 'bank' && (
-                          <p className="text-sm text-gray-900">
-                            {method.bankName} - {method.accountNumber} ({method.accountName})
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (confirm('ยืนยันการลบช่องทางนี้?')) {
-                            removePaymentMethod(billId, index);
-                          }
-                        }}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors ml-3"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {bill.paymentMethods.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-400 text-lg">ยังไม่มีช่องทางรับเงิน</p>
-                    <p className="text-gray-500 text-sm">คลิกปุ่ม "+ เพิ่ม" เพื่อเพิ่มช่องทาง</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Requests Tab */}
-        {activeTab === 'requests' && (
-          <div className="space-y-6">
-            {/* Notification Center Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <span>🔔</span>
-                  <span>ศูนย์แจ้งเตือน</span>
-                </h2>
-                <p className="text-gray-600 mt-1">
-                  คำขอและข้อความที่รอการตอบกลับ
-                  {(pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount > 0) && (
-                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
-                      {pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount} รายการ
-                    </span>
-                  )}
-                </p>
-              </div>
+              </Card>
             </div>
+          )}
+        </div>
+      </main>
 
-            {/* All Clear Message */}
-            {(pendingRequestsCount + pendingPaymentRequestsCount + unreadCommentsCount === 0) && (
-              <Card className="shadow-lg border-2 border-emerald-200 bg-emerald-50">
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">✅</div>
-                  <h3 className="text-2xl font-bold text-emerald-900 mb-2">เรียบร้อยแล้ว!</h3>
-                  <p className="text-emerald-700">ไม่มีคำขอหรือข้อความที่รอการตอบกลับ</p>
-                </div>
-              </Card>
-            )}
+      {/* Floating Action Button */}
+      <FAB actions={fabActions} />
 
-            {/* Payment Method Requests */}
-            {bill.paymentMethodRequests.filter((r) => r.status === 'pending').length > 0 && (
-              <Card className="shadow-lg border-l-4 border-purple-500">
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold">
-                      💳
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-900">
-                      คำขอเพิ่มช่องทางรับเงิน
-                    </h2>
-                    <Badge variant="warning">{bill.paymentMethodRequests.filter((r) => r.status === 'pending').length}</Badge>
-                  </div>
-                  <p className="text-gray-600 text-sm ml-10">รอการพิจารณาจากคุณ</p>
-                </div>
-                <div className="space-y-3">
-                  {bill.paymentMethodRequests
-                    .filter((request) => request.status === 'pending')
-                    .map((request) => (
-                      <div
-                        key={request.id}
-                        className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 shadow-sm"
-                      >
-                        <div className="mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="warning">รอพิจารณา</Badge>
-                            <span className="font-bold text-gray-900">
-                              {request.memberName}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mb-2">
-                            ขอเพิ่มช่องทางรับเงิน
-                          </p>
+      {/* Command Palette */}
+      <CommandPalette commands={commands} />
 
-                          {/* Payment method details */}
-                          <div className="mt-3 p-3 bg-white rounded-lg">
-                            {request.paymentMethod.type === 'promptpay' && (
-                              <div>
-                                <Badge variant="info" size="sm">พร้อมเพย์</Badge>
-                                <p className="text-lg font-mono font-bold text-gray-900 mt-2">
-                                  {request.paymentMethod.phoneNumber}
-                                </p>
-                              </div>
-                            )}
-                            {request.paymentMethod.type === 'qrcode' && (
-                              <div>
-                                <Badge variant="success" size="sm">QR Code</Badge>
-                                <img
-                                  src={request.paymentMethod.imageUrl}
-                                  alt="QR Code"
-                                  className="w-24 h-24 sm:w-32 sm:h-32 object-contain mt-2 border border-gray-200 rounded-lg"
-                                />
-                                <a
-                                  href={request.paymentMethod.imageUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="block mt-2 text-emerald-600 hover:text-emerald-700 font-semibold text-sm hover:underline"
-                                >
-                                  📷 ดูขนาดเต็ม
-                                </a>
-                              </div>
-                            )}
-                            {request.paymentMethod.type === 'bank' && (
-                              <div>
-                                <Badge variant="warning" size="sm">บัญชีธนาคาร</Badge>
-                                <p className="text-base font-bold text-gray-900 mt-2">
-                                  {request.paymentMethod.bankName}
-                                </p>
-                                <p className="text-base font-mono text-gray-900">
-                                  {request.paymentMethod.accountNumber}
-                                </p>
-                                <p className="text-sm text-gray-700">
-                                  {request.paymentMethod.accountName}
-                                </p>
-                              </div>
-                            )}
-                          </div>
+      {/* Bottom Navigation (Mobile) */}
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        pendingCount={totalPendingCount}
+      />
 
-                          {request.reason && (
-                            <p className="text-sm text-gray-600 italic mt-2">
-                              เหตุผล: {request.reason}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleApprovePaymentRequest(request.id)}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            ✓ อนุมัติ
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => handleRejectPaymentRequest(request.id)}
-                            className="flex-1 bg-red-100 hover:bg-red-200 text-red-700"
-                          >
-                            ✕ ปฏิเสธ
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </Card>
-            )}
-
-            {/* Item Requests */}
-            {bill.requests.filter((r) => r.status === 'pending').length > 0 && (
-              <Card className="shadow-lg border-l-4 border-amber-500">
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold">
-                      📝
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-900">
-                      คำขอไม่หารรายการ
-                    </h2>
-                    <Badge variant="warning">{bill.requests.filter((r) => r.status === 'pending').length}</Badge>
-                  </div>
-                  <p className="text-gray-600 text-sm ml-10">สมาชิกขอไม่หารเมนูบางรายการ</p>
-                </div>
-                <div className="space-y-3">
-                  {bill.requests
-                    .filter((request) => request.status === 'pending')
-                    .map((request) => (
-                      <div
-                        key={request.id}
-                        className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 shadow-sm"
-                      >
-                        <div className="mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="warning">รอพิจารณา</Badge>
-                            <span className="font-bold text-gray-900">
-                              {request.memberName}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mb-1">
-                            ขอไม่หารเมนู: <span className="font-semibold">{request.itemName}</span>
-                          </p>
-                          {request.reason && (
-                            <p className="text-sm text-gray-600 italic">
-                              เหตุผล: {request.reason}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleApproveRequest(request.id)}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            ✓ อนุมัติ
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => handleRejectRequest(request.id)}
-                            className="flex-1 bg-red-100 hover:bg-red-200 text-red-700"
-                          >
-                            ✕ ปฏิเสธ
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </Card>
-            )}
-
-            {/* Comments Management */}
-            {bill.comments.length > 0 && (
-              <Card className="shadow-lg border-l-4 border-indigo-500">
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
-                      💬
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-900">
-                      ความคิดเห็น
-                    </h2>
-                    {unreadCommentsCount > 0 && (
-                      <Badge variant="warning">{unreadCommentsCount} ใหม่</Badge>
-                    )}
-                  </div>
-                  <p className="text-gray-600 text-sm ml-10">ข้อความและคำถามจากสมาชิก</p>
-                </div>
-                <div className="space-y-3">
-                  {bill.comments.map((comment) => (
-                    <div
-                      key={comment.id}
-                      className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 shadow-sm"
-                    >
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-gray-900">
-                            {comment.memberName}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(comment.createdAt).toLocaleString('th-TH')}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-700 mb-2">
-                          {comment.message}
-                        </p>
-                        {comment.adminReply ? (
-                          <div className="mt-2 pt-2 border-t border-indigo-200">
-                            <p className="text-xs font-semibold text-indigo-600 mb-1">
-                              ตอบกลับของคุณ:
-                            </p>
-                            <p className="text-sm text-gray-900">{comment.adminReply}</p>
-                          </div>
-                        ) : replyingToCommentId === comment.id ? (
-                          <div className="mt-3 pt-3 border-t border-indigo-200 space-y-2">
-                            <textarea
-                              placeholder="พิมพ์คำตอบกลับ..."
-                              value={commentReply}
-                              onChange={(e) => setCommentReply(e.target.value)}
-                              rows={2}
-                              className="w-full px-3 py-2 rounded-lg border-2 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500 bg-white text-gray-900 placeholder-gray-400 text-sm resize-none"
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleReplyToComment(comment.id)}
-                                disabled={!commentReply.trim()}
-                              >
-                                ส่งคำตอบ
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => {
-                                  setReplyingToCommentId(null);
-                                  setCommentReply('');
-                                }}
-                              >
-                                ยกเลิก
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setReplyingToCommentId(comment.id)}
-                            className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-semibold hover:underline"
-                          >
-                            ↩ ตอบกลับ
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Add/Edit Member Modal */}
+      {/* Modals - Same as before */}
+      {/* Add Member Modal */}
       <Modal
         isOpen={showAddMember}
         onClose={() => {
           setShowAddMember(false);
-          setEditingMemberId(null);
           setMemberName('');
+          setEditingMemberId(null);
         }}
-        title={editingMemberId ? 'แก้ไขสมาชิก' : 'เพิ่มสมาชิก'}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setShowAddMember(false);
-                setEditingMemberId(null);
-                setMemberName('');
-              }}
-            >
-              ยกเลิก
-            </Button>
-            <Button onClick={handleAddMember} disabled={!memberName.trim()}>
-              {editingMemberId ? 'บันทึก' : 'เพิ่ม'}
-            </Button>
-          </>
-        }
-      >
-        <Input
-          label="ชื่อสมาชิก"
-          placeholder="ชื่อ"
-          value={memberName}
-          onChange={(e) => setMemberName(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleAddMember()}
-          autoFocus
-        />
-      </Modal>
-
-      {/* Add/Edit Item Modal */}
-      <Modal
-        isOpen={showAddItem}
-        onClose={() => {
-          setShowAddItem(false);
-          setEditingItemId(null);
-          setItemName('');
-          setItemPrice('');
-          setSelectedPayers([]);
-          setSelectedShared([]);
-        }}
-        title={editingItemId ? 'แก้ไขรายการอาหาร' : 'เพิ่มรายการอาหาร'}
-        size="lg"
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setShowAddItem(false);
-                setEditingItemId(null);
-                setItemName('');
-                setItemPrice('');
-                setSelectedPayers([]);
-                setSelectedShared([]);
-              }}
-            >
-              ยกเลิก
-            </Button>
-            <Button
-              onClick={handleAddItem}
-              disabled={
-                !itemName.trim() ||
-                !itemPrice ||
-                selectedPayers.length === 0 ||
-                selectedShared.length === 0
-              }
-            >
-              {editingItemId ? 'บันทึกรายการ' : 'เพิ่มรายการ'}
-            </Button>
-          </>
-        }
+        title={editingMemberId ? 'Edit Member' : 'Add New Member'}
       >
         <div className="space-y-4">
           <Input
-            label="ชื่อเมนู"
-            placeholder="เช่น ข้าวผัด"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
+            label="Member Name"
+            placeholder="e.g. John, Mary"
+            value={memberName}
+            onChange={(e) => setMemberName(e.target.value)}
+            autoFocus
           />
-          <Input
-            label="ราคา (บาท)"
-            type="number"
-            placeholder="0.00"
-            value={itemPrice}
-            onChange={(e) => setItemPrice(e.target.value)}
-          />
-
-          <div>
-            <p className="text-sm font-bold text-gray-900 mb-2">
-              ใครจ่ายเงิน?
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {bill.members.map((member) => (
-                <button
-                  key={member.id}
-                  onClick={() => toggleMemberSelection(member.id, selectedPayers, setSelectedPayers)}
-                  className={`p-3 rounded-xl border-2 transition-all ${
-                    selectedPayers.includes(member.id)
-                      ? 'border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-md scale-105'
-                      : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full shadow-sm" style={{ backgroundColor: member.color }} />
-                    <span className="text-sm font-bold text-gray-900">{member.name}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-bold text-gray-900">
-                ใครกิน? (หารกัน)
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => selectAllMembers(setSelectedShared)}
-                >
-                  เลือกทั้งหมด
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => deselectAllMembers(setSelectedShared)}
-                >
-                  ล้าง
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {bill.members.map((member) => (
-                <button
-                  key={member.id}
-                  onClick={() => toggleMemberSelection(member.id, selectedShared, setSelectedShared)}
-                  className={`p-3 rounded-xl border-2 transition-all ${
-                    selectedShared.includes(member.id)
-                      ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md scale-105'
-                      : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full shadow-sm" style={{ backgroundColor: member.color }} />
-                    <span className="text-sm font-bold text-gray-900">{member.name}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
+          <div className="flex gap-2">
+            <Button onClick={handleAddMember} fullWidth className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
+              {editingMemberId ? 'Save' : 'Add Member'}
+            </Button>
+            <Button
+              onClick={() => {
+                setShowAddMember(false);
+                setMemberName('');
+                setEditingMemberId(null);
+              }}
+              variant="secondary"
+              fullWidth
+            >
+              Cancel
+            </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Add Payment Method Modal */}
+      {/* Add Item Modal - Multi-step Wizard */}
+      <Modal
+        isOpen={showAddItem}
+        onClose={() => {
+          setShowAddItem(false);
+          setItemName('');
+          setItemPrice('');
+          setSelectedPayers([]);
+          setSelectedShared([]);
+          setEditingItemId(null);
+          setItemWizardStep(1);
+        }}
+        title={editingItemId ? 'Edit Item' : 'Add New Item'}
+        size="lg"
+      >
+        <div className="space-y-6">
+          {/* Progress Indicator */}
+          <div className="flex items-center justify-center gap-2">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                    itemWizardStep >= step
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  {step}
+                </div>
+                {step < 3 && (
+                  <div
+                    className={`w-12 h-1 ${
+                      itemWizardStep > step ? 'bg-emerald-600' : 'bg-gray-200'
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Step 1: Item Details */}
+          {itemWizardStep === 1 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">Item Details</h3>
+              <Input
+                label="Item Name"
+                placeholder="e.g. Steak, Pizza"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                autoFocus
+              />
+              <Input
+                label="Price (฿)"
+                type="number"
+                placeholder="0"
+                value={itemPrice}
+                onChange={(e) => setItemPrice(e.target.value)}
+              />
+              <Button
+                onClick={() => setItemWizardStep(2)}
+                fullWidth
+                disabled={!itemName.trim() || !itemPrice}
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+              >
+                Next →
+              </Button>
+            </div>
+          )}
+
+          {/* Step 2: Who Paid */}
+          {itemWizardStep === 2 && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">Who paid?</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => selectAllMembers(setSelectedPayers)}
+                    className="text-sm text-emerald-600 hover:text-emerald-700"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-gray-400">|</span>
+                  <button
+                    onClick={() => deselectAllMembers(setSelectedPayers)}
+                    className="text-sm text-rose-600 hover:text-rose-700"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                {bill.members.map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => toggleMemberSelection(member.id, selectedPayers, setSelectedPayers)}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      selectedPayers.includes(member.id)
+                        ? 'border-emerald-600 bg-emerald-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: member.color }}
+                      />
+                      <span className="font-medium text-gray-900">{member.name}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => setItemWizardStep(1)} variant="secondary" fullWidth>
+                  ← Back
+                </Button>
+                <Button
+                  onClick={() => setItemWizardStep(3)}
+                  fullWidth
+                  disabled={selectedPayers.length === 0}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                >
+                  Next →
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Who Shared */}
+          {itemWizardStep === 3 && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">Who's sharing?</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => selectAllMembers(setSelectedShared)}
+                    className="text-sm text-emerald-600 hover:text-emerald-700"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-gray-400">|</span>
+                  <button
+                    onClick={() => deselectAllMembers(setSelectedShared)}
+                    className="text-sm text-rose-600 hover:text-rose-700"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Split Options */}
+              <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
+                <button
+                  onClick={() => {
+                    selectAllMembers(setSelectedShared);
+                    setQuickSplitMode('equal');
+                  }}
+                  className={`p-2 rounded-lg border-2 transition-all text-center ${
+                    quickSplitMode === 'equal'
+                      ? 'border-emerald-600 bg-emerald-50'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">⚖️</div>
+                  <div className="text-xs font-semibold text-gray-900">Split All</div>
+                </button>
+                <button
+                  onClick={() => {
+                    // Select payers only
+                    setSelectedShared(selectedPayers);
+                    setQuickSplitMode('common');
+                  }}
+                  className={`p-2 rounded-lg border-2 transition-all text-center ${
+                    quickSplitMode === 'common'
+                      ? 'border-teal-600 bg-teal-50'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">👥</div>
+                  <div className="text-xs font-semibold text-gray-900">Payers Only</div>
+                </button>
+                <button
+                  onClick={() => {
+                    deselectAllMembers(setSelectedShared);
+                    setQuickSplitMode('custom');
+                  }}
+                  className={`p-2 rounded-lg border-2 transition-all text-center ${
+                    quickSplitMode === 'custom'
+                      ? 'border-purple-600 bg-purple-50'
+                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">✏️</div>
+                  <div className="text-xs font-semibold text-gray-900">Custom</div>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                {bill.members.map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => toggleMemberSelection(member.id, selectedShared, setSelectedShared)}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      selectedShared.includes(member.id)
+                        ? 'border-teal-600 bg-teal-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: member.color }}
+                      />
+                      <span className="font-medium text-gray-900">{member.name}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => setItemWizardStep(2)} variant="secondary" fullWidth>
+                  ← Back
+                </Button>
+                <Button
+                  onClick={handleAddItem}
+                  fullWidth
+                  disabled={selectedShared.length === 0}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                >
+                  {editingItemId ? 'Save' : 'Add Item'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Add Payment Modal */}
       <Modal
         isOpen={showAddPayment}
         onClose={() => {
@@ -1866,12 +2117,129 @@ export default function AdminDashboard() {
           setAccountNumber('');
           setAccountName('');
         }}
-        title="เพิ่มช่องทางรับเงิน"
+        title="Add Payment Method"
         size="lg"
-        footer={
-          <>
+      >
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Account Owner
+            </label>
+            <select
+              value={paymentOwnerId}
+              onChange={(e) => setPaymentOwnerId(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            >
+              <option value="">-- Select Member --</option>
+              {bill.members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Payment Type
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setPaymentType('promptpay')}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  paymentType === 'promptpay'
+                    ? 'border-emerald-600 bg-emerald-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <p className="font-semibold text-sm">PromptPay</p>
+              </button>
+              <button
+                onClick={() => setPaymentType('qrcode')}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  paymentType === 'qrcode'
+                    ? 'border-teal-600 bg-teal-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <p className="font-semibold text-sm">QR Code</p>
+              </button>
+              <button
+                onClick={() => setPaymentType('bank')}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  paymentType === 'bank'
+                    ? 'border-cyan-600 bg-cyan-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <p className="font-semibold text-sm">Bank</p>
+              </button>
+            </div>
+          </div>
+
+          {paymentType === 'promptpay' && (
+            <Input
+              label="PromptPay Phone Number"
+              placeholder="0812345678"
+              value={promptPayPhone}
+              onChange={(e) => setPromptPayPhone(e.target.value)}
+            />
+          )}
+
+          {paymentType === 'qrcode' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload QR Code
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleQRFileChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              {qrcodePreview && (
+                <img
+                  src={qrcodePreview}
+                  alt="Preview"
+                  className="mt-4 w-48 h-48 object-cover rounded-lg border-2 border-teal-200"
+                />
+              )}
+            </div>
+          )}
+
+          {paymentType === 'bank' && (
+            <div className="space-y-4">
+              <Input
+                label="Bank Name"
+                placeholder="e.g. Kasikorn Bank"
+                value={bankName}
+                onChange={(e) => setBankName(e.target.value)}
+              />
+              <Input
+                label="Account Number"
+                placeholder="1234567890"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+              />
+              <Input
+                label="Account Name"
+                placeholder="Mr./Mrs. Name"
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+              />
+            </div>
+          )}
+
+          <div className="flex gap-2">
             <Button
-              variant="secondary"
+              onClick={handleAddPaymentMethod}
+              fullWidth
+              disabled={isUploading}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+            >
+              {isUploading ? 'Uploading...' : 'Add Payment Method'}
+            </Button>
+            <Button
               onClick={() => {
                 setShowAddPayment(false);
                 setPaymentOwnerId('');
@@ -1882,116 +2250,12 @@ export default function AdminDashboard() {
                 setAccountNumber('');
                 setAccountName('');
               }}
-              disabled={isUploading}
+              variant="secondary"
+              fullWidth
             >
-              ยกเลิก
-            </Button>
-            <Button
-              onClick={handleAddPaymentMethod}
-              disabled={!paymentOwnerId || isUploading}
-            >
-              {isUploading ? 'กำลังอัพโหลด...' : 'เพิ่มช่องทาง'}
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">
-              เจ้าของบัญชี
-            </label>
-            <select
-              value={paymentOwnerId}
-              onChange={(e) => setPaymentOwnerId(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all shadow-sm hover:border-gray-300 font-medium"
-            >
-              <option value="">-- เลือกสมาชิก --</option>
-              {bill.members.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant={paymentType === 'promptpay' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setPaymentType('promptpay')}
-            >
-              พร้อมเพย์
-            </Button>
-            <Button
-              variant={paymentType === 'qrcode' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setPaymentType('qrcode')}
-            >
-              QR Code
-            </Button>
-            <Button
-              variant={paymentType === 'bank' ? 'primary' : 'secondary'}
-              size="sm"
-              onClick={() => setPaymentType('bank')}
-            >
-              บัญชีธนาคาร
+              Cancel
             </Button>
           </div>
-
-          {paymentType === 'promptpay' && (
-            <Input
-              placeholder="เบอร์โทรศัพท์พร้อมเพย์"
-              value={promptPayPhone}
-              onChange={(e) => setPromptPayPhone(e.target.value)}
-            />
-          )}
-
-          {paymentType === 'qrcode' && (
-            <div className="space-y-3">
-              <label className="block text-sm font-bold text-gray-900">
-                อัพโหลดรูป QR Code
-              </label>
-              <input
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                onChange={handleQRFileChange}
-                className="block w-full text-sm text-gray-900 border border-gray-300 rounded-xl cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-              />
-              <p className="text-xs text-gray-500">
-                รองรับ JPG, PNG, WEBP (ขนาดไม่เกิน 5MB)
-              </p>
-              {qrcodePreview && (
-                <div className="mt-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">ตัวอย่าง:</p>
-                  <img
-                    src={qrcodePreview}
-                    alt="QR Code Preview"
-                    className="w-full max-w-xs sm:max-w-sm object-contain border-2 border-gray-200 rounded-xl"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {paymentType === 'bank' && (
-            <div className="space-y-2">
-              <Input
-                placeholder="ชื่อธนาคาร"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-              />
-              <Input
-                placeholder="เลขบัญชี"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-              />
-              <Input
-                placeholder="ชื่อบัญชี"
-                value={accountName}
-                onChange={(e) => setAccountName(e.target.value)}
-              />
-            </div>
-          )}
         </div>
       </Modal>
 
@@ -1999,41 +2263,46 @@ export default function AdminDashboard() {
       <Modal
         isOpen={showShareLink}
         onClose={() => setShowShareLink(false)}
-        title="แชร์ลิงก์ให้สมาชิก"
-        footer={
-          <Button
-            onClick={() => {
-              navigator.clipboard.writeText(memberLink);
-              showToast('คัดลอกลิงก์แล้ว!', 'success');
-            }}
-            fullWidth
-          >
-            📋 คัดลอกลิงก์
-          </Button>
-        }
+        title="Share Bill Link"
       >
-        <div className="space-y-4">
-          <p className="text-gray-700 text-base">
-            ส่งลิงก์นี้ให้สมาชิกเพื่อให้พวกเขาเข้ามาดูข้อมูลและยอดเงินที่ต้องจ่าย
-          </p>
-          <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200 shadow-sm">
-            <p className="text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">ลิงก์สำหรับสมาชิก</p>
-            <p className="text-sm font-mono text-gray-900 break-all font-semibold">
-              {memberLink}
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Member Link
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={memberLink}
+                readOnly
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm"
+              />
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(memberLink);
+                  showToast('Link copied!', 'success');
+                }}
+                size="sm"
+              >
+                Copy
+              </Button>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              Share this link with members to view balances
             </p>
           </div>
-          <div className="p-6 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-xl border-2 border-indigo-200 shadow-md">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-2xl">🔐</span>
-              <p className="text-sm font-bold text-indigo-900 uppercase tracking-wide">
-                รหัส Admin ของคุณ
+
+          <div className="pt-4 border-t border-gray-200">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Admin Code
+            </label>
+            <div className="px-4 py-3 bg-emerald-50 rounded-lg border-2 border-emerald-200">
+              <p className="text-center font-mono font-bold text-2xl text-emerald-700">
+                {bill.adminId}
               </p>
             </div>
-            <p className="text-4xl font-bold font-mono bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-3 tracking-wider">
-              {bill.adminId}
-            </p>
-            <p className="text-sm text-indigo-800 font-medium">
-              เก็บรหัสนี้ไว้เพื่อเข้าหน้า Admin ในครั้งถัดไป
+            <p className="text-sm text-gray-500 mt-2">
+              Use this code to access admin panel
             </p>
           </div>
         </div>

@@ -24,13 +24,22 @@ export interface BankAccountInfo {
 
 export type PaymentMethod = PromptPayInfo | QRCodeInfo | BankAccountInfo;
 
+// Payment Slip type
+export interface PaymentSlip {
+  url: string;
+  verified: boolean;
+  uploadedAt: Date;
+  note?: string; // บันทึกเพิ่มเติม เช่น "โอนให้ John", "ส่วนที่ 1"
+}
+
 // Member type
 export interface Member {
   id: string;
   name: string;
   color: string; // สีประจำตัวสำหรับ UI
-  paymentSlipUrl?: string; // URL ของสลิปการโอนเงิน (optional)
-  paymentVerified?: boolean; // Admin ตรวจสอบการชำระเงินแล้ว (optional)
+  paymentSlips?: PaymentSlip[]; // สลิปการโอนเงินหลายใบ (optional)
+  paymentSlipUrl?: string; // DEPRECATED: ใช้ paymentSlips แทน (เก็บไว้เพื่อ backward compatibility)
+  paymentVerified?: boolean; // DEPRECATED: ใช้ paymentSlips[].verified แทน (เก็บไว้เพื่อ backward compatibility)
 }
 
 // Item/Menu type

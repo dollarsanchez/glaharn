@@ -90,6 +90,65 @@ export async function deleteQRCode(imageUrl: string): Promise<void> {
 }
 
 /**
+ * Upload Payment Slip image to Supabase Storage
+ * @param file - File object from input
+ * @param billId - ID ของบิลเพื่อใช้ในการจัด folder
+ * @param memberId - ID ของสมาชิก
+ * @returns Public URL of uploaded image or base64 data URL as fallback
+ */
+export async function uploadPaymentSlip(file: File, billId: string, memberId: string): Promise<string> {
+  try {
+    // สร้างชื่อไฟล์ที่ unique
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${billId}/slips/${memberId}-${Date.now()}.${fileExt}`;
+
+    // Upload file
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (error) {
+      console.log('Supabase upload not available, using base64 fallback:', error.message);
+      // Fallback to base64 if Supabase is not available
+      return await fileToBase64(file);
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(fileName);
+
+    console.log('✅ Payment slip uploaded to Supabase successfully');
+    return publicUrl;
+  } catch (error) {
+    console.log('Upload error, using base64 fallback:', error);
+    // Fallback to base64
+    return await fileToBase64(file);
+  }
+}
+
+/**
+ * Upload multiple Payment Slip images to Supabase Storage
+ * @param files - Array of File objects from input
+ * @param billId - ID ของบิลเพื่อใช้ในการจัด folder
+ * @param memberId - ID ของสมาชิก
+ * @returns Array of Public URLs of uploaded images or base64 data URLs as fallback
+ */
+export async function uploadMultiplePaymentSlips(
+  files: File[],
+  billId: string,
+  memberId: string
+): Promise<string[]> {
+  const uploadPromises = files.map((file) =>
+    uploadPaymentSlip(file, billId, memberId)
+  );
+  return Promise.all(uploadPromises);
+}
+
+/**
  * Validate image file
  * @param file - File to validate
  * @returns error message if invalid, null if valid
