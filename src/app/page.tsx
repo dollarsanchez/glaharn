@@ -295,7 +295,7 @@ export default function Home() {
               <span className="font-semibold text-gray-900">กล้าหาร</span>
             </div>
             <p className="text-sm text-gray-400">
-              Made with care in Thailand
+              พัฒนาโดย Mr. Peeradol Thanyatheeraphong
             </p>
           </div>
         </div>
