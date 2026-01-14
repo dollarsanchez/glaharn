@@ -2267,7 +2267,7 @@ export default function AdminDashboard() {
       >
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Member Link
             </label>
             <div className="flex gap-2">
@@ -2275,7 +2275,7 @@ export default function AdminDashboard() {
                 type="text"
                 value={memberLink}
                 readOnly
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm text-gray-900"
               />
               <Button
                 onClick={() => {
@@ -2287,21 +2287,21 @@ export default function AdminDashboard() {
                 Copy
               </Button>
             </div>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-600 mt-2">
               Share this link with members to view balances
             </p>
           </div>
 
           <div className="pt-4 border-t border-gray-200">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Admin Code
             </label>
             <div className="px-4 py-3 bg-violet-50 rounded-lg border-2 border-violet-200">
-              <p className="text-center font-mono font-bold text-2xl text-violet-700">
+              <p className="text-center font-mono font-bold text-2xl text-violet-900">
                 {bill.adminId}
               </p>
             </div>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-gray-600 mt-2">
               Use this code to access admin panel
             </p>
           </div>

@@ -50,87 +50,61 @@ export function calculateMemberSummaries(bill: Bill): MemberSummary[] {
 }
 
 /**
- * คำนวณ transactions แบบ proportional payment
- * แต่ละคนจะจ่ายตามสัดส่วนที่แท้จริงของเมนูที่เขาหาร
- * รวมรายการที่ซ้ำซ้อนเป็นยอดสุทธิ (net transactions)
+ * คำนวณ transactions แบบ Net Settlement Optimization (Greedy Algorithm)
+ * หลักการ: คำนวณยอด Balance สุทธิของทุกคน แล้วจับคู่ลูกหนี้กับเจ้าหนี้
+ * เพื่อให้เกิดจำนวน Transaction น้อยที่สุด (Minimize Transactions)
  */
-export function calculateTransactions(summaries: MemberSummary[], bill: Bill): Transaction[] {
+export function calculateTransactions(summaries: MemberSummary[], _bill?: Bill): Transaction[] {
   const transactions: Transaction[] = [];
-  const transactionMap: Record<string, number> = {}; // key: "fromId->toId", value: amount
 
-  // คำนวณการจ่ายเงินสำหรับแต่ละเมนู
-  bill.items.forEach((item) => {
-    const sharedCount = item.sharedBy.length;
-    if (sharedCount === 0) return;
+  // 1. แยกกลุ่มลูกหนี้ (Debtors) และเจ้าหนี้ (Creditors)
+  // กรองเฉพาะคนที่มีเศษทศนิยมมากกว่า 0.01 เพื่อป้องกัน floating point error
+  let debtors = summaries
+    .filter((s) => s.balance < -0.01)
+    .map((s) => ({ ...s, balance: s.balance })) // clone object
+    .sort((a, b) => a.balance - b.balance); // เรียงจากติดลบมาก -> น้อย (Ascending)
 
-    const pricePerPerson = item.price / sharedCount;
+  let creditors = summaries
+    .filter((s) => s.balance > 0.01)
+    .map((s) => ({ ...s, balance: s.balance })) // clone object
+    .sort((a, b) => b.balance - a.balance); // เรียงจากบวกมาก -> น้อย (Descending)
 
-    // สำหรับแต่ละคนที่หารเมนูนี้
-    item.sharedBy.forEach((sharedMemberId) => {
-      // สำหรับแต่ละคนที่จ่ายเมนูนี้
-      item.paidBy.forEach((paidMemberId) => {
-        // ถ้าคนเดียวกัน ไม่ต้องโอน
-        if (sharedMemberId === paidMemberId) return;
+  // 2. จับคู่ล้างหนี้ (Greedy Matching)
+  let debtorIndex = 0;
+  let creditorIndex = 0;
 
-        // คำนวณจำนวนที่คนนี้จ่ายไปในเมนูนี้
-        const paidAmount = item.paidAmounts?.[paidMemberId] ?? item.price / item.paidBy.length;
-        // คำนวณสัดส่วนที่ต้องจ่าย
-        const proportionToPay = (pricePerPerson / item.price) * paidAmount;
+  while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
+    const debtor = debtors[debtorIndex];
+    const creditor = creditors[creditorIndex];
 
-        const key = `${sharedMemberId}->${paidMemberId}`;
-        transactionMap[key] = (transactionMap[key] || 0) + proportionToPay;
-      });
-    });
-  });
+    // หาจำนวนเงินที่ต้องเคลียร์กัน (ขั้นต่ำระหว่าง "หนี้ที่ A มี" กับ "เงินที่ B ต้องได้")
+    const amount = Math.min(Math.abs(debtor.balance), creditor.balance);
 
-  // รวมรายการที่ซ้ำซ้อนเป็นยอดสุทธิ (A->B และ B->A)
-  const netTransactionMap: Record<string, number> = {};
-  const processedPairs = new Set<string>();
-
-  Object.entries(transactionMap).forEach(([key, amount]) => {
-    if (amount <= 0.01) return; // ข้ามยอดเล็กน้อย
-
-    const [fromId, toId] = key.split('->');
-    const pairKey = [fromId, toId].sort().join('<->'); // สร้าง key ที่ไม่สนใจทิศทาง
-
-    // ถ้าคู่นี้ถูกประมวลผลแล้ว ข้ามไป
-    if (processedPairs.has(pairKey)) return;
-    processedPairs.add(pairKey);
-
-    // หาจำนวนในทิศทางตรงกันข้าม
-    const reverseKey = `${toId}->${fromId}`;
-    const reverseAmount = transactionMap[reverseKey] || 0;
-
-    // คำนวณยอดสุทธิ
-    const netAmount = amount - reverseAmount;
-
-    if (Math.abs(netAmount) > 0.01) {
-      // ถ้า netAmount เป็นบวก แปลว่า fromId ต้องจ่ายให้ toId
-      // ถ้า netAmount เป็นลบ แปลว่า toId ต้องจ่ายให้ fromId
-      if (netAmount > 0) {
-        netTransactionMap[`${fromId}->${toId}`] = netAmount;
-      } else {
-        netTransactionMap[`${toId}->${fromId}`] = Math.abs(netAmount);
-      }
-    }
-  });
-
-  // แปลง map เป็น array
-  Object.entries(netTransactionMap).forEach(([key, amount]) => {
-    const [fromId, toId] = key.split('->');
-    const fromSummary = summaries.find(s => s.memberId === fromId);
-    const toSummary = summaries.find(s => s.memberId === toId);
-
-    if (fromSummary && toSummary) {
+    // สร้าง Transaction
+    if (amount > 0) {
       transactions.push({
-        from: fromId,
-        fromName: fromSummary.memberName,
-        to: toId,
-        toName: toSummary.memberName,
-        amount: Math.round(amount * 100) / 100, // round to 2 decimal places
+        from: debtor.memberId,
+        fromName: debtor.memberName,
+        to: creditor.memberId,
+        toName: creditor.memberName,
+        amount: Math.round(amount * 100) / 100,
       });
     }
-  });
+
+    // หักลบยอดคงเหลือ
+    debtor.balance += amount;
+    creditor.balance -= amount;
+
+    // ตรวจสอบว่าใครเคลียร์ยอดหมดแล้ว ให้ขยับ index
+    // ใช้ 0.01 เป็น threshold สำหรับ floating point comparison
+    if (Math.abs(debtor.balance) < 0.01) {
+      debtorIndex++;
+    }
+
+    if (creditor.balance < 0.01) {
+      creditorIndex++;
+    }
+  }
 
   return transactions;
 }
