@@ -222,14 +222,15 @@ export default function MultipleSlipUpload({
                   : `📤 อัพโหลดทั้งหมด (${pendingUploads.length})`}
               </Button>
               <label htmlFor="slip-upload-more" className="flex-shrink-0">
-                <Button
-                  as="span"
-                  variant="secondary"
-                  disabled={isUploading}
-                  className="cursor-pointer"
+                <span
+                  className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
+                    isUploading
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
                 >
                   + เพิ่ม
-                </Button>
+                </span>
                 <input
                   id="slip-upload-more"
                   type="file"
