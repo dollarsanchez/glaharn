@@ -111,16 +111,16 @@ export default function Analytics({ bill, summaries }: AnalyticsProps) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
-                {spendingData.map((entry, index) => (
+                {spendingData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Tooltip formatter={(value) => formatCurrency(value as number)} />
             </PieChart>
           </ResponsiveContainer>
         </Card>
@@ -133,7 +133,7 @@ export default function Analytics({ bill, summaries }: AnalyticsProps) {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Tooltip formatter={(value) => formatCurrency(value as number)} />
               <Legend />
               <Bar dataKey="paid" fill="#10b981" name="Paid" />
               <Bar dataKey="shouldPay" fill="#06b6d4" name="Should Pay" />

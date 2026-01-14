@@ -5,7 +5,8 @@
       "Bash(npm run dev:*)",
       "Bash(node test-calculation.js:*)",
       "Bash(ls:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []
